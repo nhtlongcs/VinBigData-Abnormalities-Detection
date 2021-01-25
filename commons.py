@@ -25,7 +25,7 @@ class YoloDataset:
         classes = list(map(lambda x: str(x), classes))  # sorted by idxes
         return classes
 
-    def write_one_annotation(self, image_id: str, save_dir: str,) -> None:
+    def write_one_annotation(self, image_id: str, save_dir: str) -> None:
         from os.path import join
 
         database = self.df
@@ -44,7 +44,7 @@ class YoloDataset:
                     f.write(f"{id} {x} {y} {w} {h}\n")
             f.close()
 
-    def write_all_annotations(self, save_dir: str = ".cache",) -> None:
+    def write_all_annotations(self, save_dir: str = ".cache") -> None:
         database = self.df
 
         try:
@@ -96,7 +96,7 @@ def normalize(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def resized_ratio(raw_shape: tuple, target_size: int, keep_ratio: bool = True) -> tuple:
+def resized_ratio(raw_shape: tuple, target_size: tuple, keep_ratio: bool = True) -> tuple:
     if keep_ratio:
         w_ratio = target_size[0] / raw_shape[0]
         h_ratio = target_size[1] / raw_shape[1]
