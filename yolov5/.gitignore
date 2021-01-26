@@ -242,8 +242,6 @@ crashlytics-build.properties
 fabric.properties
 
 ./data/*
-!./data/images/zidane.jpg
-!./data/images/bus.jpg
 !./data/coco.names
 !./data/coco_paper.names
 !./data/coco.data
@@ -251,3 +249,6 @@ fabric.properties
 !./data/coco_*.txt
 !./data/trainvalno5k.shapes
 !./data/*.sh
+
+!./data/images/zidane.jpg
+!./data/images/bus.jpg
