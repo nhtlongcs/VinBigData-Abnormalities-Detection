@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
+import json
 
 IGNORE_CLASSES = [14]
 
@@ -58,6 +59,81 @@ class YoloDataset:
                 image_id=img_id, save_dir=save_dir,
             )
 
+class CocoDataset:
+    def __init__(self, df: pd.DataFrame):
+        self.df = df
+        self.ignore_classes = IGNORE_CLASSES
+
+    def get_order_classes(self) -> list:
+        df = self.df
+        ignore_classes = self.ignore_classes
+        for ignore_c in ignore_classes:
+            df = df.loc[df.class_id != ignore_c]
+        class_ids, class_names = list(zip(*set(zip(df.class_id, df.class_name))))
+        classes = list(np.array(class_names)[np.argsort(class_ids)])
+        classes = list(map(lambda x: str(x), classes))  # sorted by idxes
+        return classes
+
+    def write_all_annotations(self, save_filename: str = ".cache/coco.json") -> None:
+        database = self.df
+        ignore_classes = self.ignore_classes
+
+        try:
+            os.makedirs(os.path.dirname(save_filename))
+        except:
+            pass
+        
+        my_dict = {
+            'images': [],
+            'annotations': [],
+            'categories': [],
+        }
+
+        img_count = 0
+        item_count = 0
+        image_dict = {}
+        labels = self.get_order_classes()
+
+        for label_idx, label in enumerate(labels):
+            if int(label_idx) not in ignore_classes:
+                class_dict = {
+                    'supercategory': None,
+                    'id': label_idx+1,  #Coco starts from 1
+                    'name': label
+                }
+                my_dict['categories'].append(class_dict)
+
+        for i, row in tqdm(database.iterrows()):
+            image_name, class_name, class_id, rad_id, xmin, ymin, xmax, ymax, width, height = row
+            if int(class_id) not in ignore_classes:
+                if image_name not in image_dict.keys():
+                    image_dict[image_name] = img_count
+                    img_count += 1
+                    image_id = image_dict[image_name]
+                    img_dict = {
+                        'file_name': image_name+".png",
+                        'height': height,
+                        'width':width,
+                        'id':image_id,
+                    }
+                    my_dict['images'].append(img_dict)
+
+                ann_w, ann_h = xmax - xmin, ymax- ymin
+                image_id = image_dict[image_name]
+                ann_dict = {
+                    'id': item_count,
+                    'image_id': image_id,
+                    'bbox': [xmin, ymin, ann_w, ann_h],
+                    'area': ann_w * ann_h,
+                    'category_id': int(class_id)+1, #Coco starts from 1
+                    'rad_id': str(rad_id),
+                    'iscrowd': 0 
+                }
+                item_count += 1
+                my_dict['annotations'].append(ann_dict)
+
+        with open(save_filename, "w") as outfile:  
+            json.dump(my_dict, outfile) 
 
 def get_XY(
     df: pd.DataFrame,
