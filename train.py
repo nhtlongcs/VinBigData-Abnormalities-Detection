@@ -89,7 +89,7 @@ def train(args, config):
         retransforms = Compose([
             Denormalize(mean=config.augmentations['mean'], std=config.augmentations['std'], box_transform=False),
             ToPILImage(),
-            Resize(size = config.tile_size)]))
+            Resize(size = config.augmentations['image_size'])]))
 
     model = Detector(
             n_classes=NUM_CLASSES,
