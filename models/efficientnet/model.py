@@ -134,7 +134,7 @@ class EfficientNet(nn.Module):
         bn_eps = self._global_params.batch_norm_epsilon
 
         # Stem
-        in_channels = 3  # rgb
+        in_channels = 1  # rgb
         out_channels = round_filters(32, self._global_params)  # number of output channels
         self._conv_stem = Conv2d(in_channels, out_channels, kernel_size=3, stride=2, bias=False)
         self._bn0 = nn.BatchNorm2d(num_features=out_channels, momentum=bn_mom, eps=bn_eps)
