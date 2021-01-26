@@ -23,12 +23,11 @@ class COCO(data.Dataset):
 
     def __init__(self, opt, split):
         super(COCO, self).__init__()
-        opt.data_dir = "/content/inputs/data/"
         ############# CHANGE DATA ROOT DIR ############################################
         self.data_dir = os.path.join(opt.data_dir, "abc")
         self.img_dir = os.path.join(self.data_dir, "imgs")
         ############# CHANGE PATH TO ANNOTATIONS VALIDATION ###########################
-        if split == "val":
+        if split == "test":
             self.annot_path = os.path.join(
                 self.data_dir, "annotations", "val.json"
             ).format(split)
