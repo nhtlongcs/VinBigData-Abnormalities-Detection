@@ -93,7 +93,7 @@ class CocoDataset(Dataset):
         image_info = self.coco.loadImgs(self.image_ids[image_index])[0]
         path = os.path.join(self.root_dir, image_info['file_name'])
   
-        img = Image.open(path).convert('RGB')
+        img = Image.open(path)
     
         return img, image_info['file_name']
 
