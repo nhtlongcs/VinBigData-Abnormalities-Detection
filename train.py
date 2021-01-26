@@ -87,7 +87,7 @@ def train(args, config):
         min_conf = 0.15,
         min_iou = 0.2,
         retransforms = Compose([
-            Denormalize(box_transform=False),
+            Denormalize(mean=config.augmentations['mean'], std=config.augmentations['std'], box_transform=False),
             ToPILImage(),
             Resize(size = config.tile_size)]))
 
