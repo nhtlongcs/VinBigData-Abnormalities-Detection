@@ -74,6 +74,37 @@ class CocoDataset:
         classes = list(map(lambda x: str(x), classes))  # sorted by idxes
         return classes
 
+    @staticmethod
+    def train_test_split(in_filename: str, ratio: float =0.8):
+        import funcy
+        from sklearn.model_selection import train_test_split
+
+        TRAIN_PATH = in_filename[:-5]+'_train.json'
+        VAL_PATH = in_filename[:-5]+'_val.json'
+
+        def save_coco(file, images, annotations, categories):
+            with open(file, 'wt', encoding='UTF-8') as coco:
+                json.dump({ 'images': images, 
+                    'annotations': annotations, 'categories': categories}, coco, indent=2, sort_keys=True)
+
+        def filter_annotations(annotations, images):
+            image_ids = funcy.lmap(lambda i: int(i['id']), images)
+            return funcy.lfilter(lambda a: int(a['image_id']) in image_ids, annotations)
+
+        with open(in_filename, 'rt', encoding='UTF-8') as annotations:
+            coco = json.load(annotations)
+        
+            images = coco['images'] 
+            annotations = coco['annotations']
+            categories = coco['categories']
+
+            x, y = train_test_split(images, train_size=ratio)
+
+            save_coco(TRAIN_PATH,  x, filter_annotations(annotations, x), categories)
+            save_coco(VAL_PATH, y, filter_annotations(annotations, y), categories)
+
+            print('Split completed!')
+
     def write_all_annotations(self, save_filename: str = ".cache/coco.json") -> None:
         database = self.df
         ignore_classes = self.ignore_classes
@@ -103,8 +134,23 @@ class CocoDataset:
                 }
                 my_dict['categories'].append(class_dict)
 
-        for i, row in tqdm(database.iterrows()):
-            image_name, class_name, class_id, rad_id, xmin, ymin, xmax, ymax, width, height = row
+
+        annotations = [
+            row
+            for row in zip(
+                database["image_id"], 
+                database["class_id"], 
+                database["rad_id"], 
+                database["x_min"], 
+                database["y_min"], 
+                database["x_max"], 
+                database['y_max'],
+                database['width'],
+                database['height'])
+        ]
+
+        for row in tqdm(annotations):
+            image_name, class_id, rad_id, xmin, ymin, xmax, ymax, width, height = row
             if int(class_id) not in ignore_classes:
                 if image_name not in image_dict.keys():
                     image_dict[image_name] = img_count
