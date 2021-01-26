@@ -43,8 +43,14 @@ y_bin = mlb.fit_transform(y)
 # k-fold split
 df['fold'] = np.nan
 
+cnt_df = pd.DataFrame()
+cnt_df['class_id'] = original_cnt.keys()
+cnt_df['total'] = original_cnt.values()
+cnt_df = cnt_df.sort_values(by='class_id')
+
 X_indices = np.array(range(len(X))).reshape(-1, 1)
 k_fold = IterativeStratification(n_splits=args.k, order=1)
+
 for i, (train_indices, test_indices) in enumerate(k_fold.split(X_indices, y_bin)):
     # Get train-val splits
     X_train = X[train_indices]
@@ -53,19 +59,10 @@ for i, (train_indices, test_indices) in enumerate(k_fold.split(X_indices, y_bin)
     X_test = X[test_indices]
     y_test = y[test_indices]
 
-    # Generate count
-    train_cnt = dict(Counter(sum(y_train, [])))
-    test_cnt = dict(Counter(sum(y_test, [])))
-
-    cnt_rows = [[k,
-                 original_cnt[k],
-                 train_cnt.get(k, 0),
-                 test_cnt.get(k, 0)]
-                for k in original_cnt.keys()]
-    csv.writer(open(f'split_count_{i}.csv', 'w')).writerows(cnt_rows)
-
     # Assign fold
     for x in X_test:
         df['fold'][df['image_id'] == x] = i
+    cnt_df[f'fold_{i}'] = df.groupby('fold')['class_id'].value_counts()[i].sort_index().values
 df['fold'] = df['fold'].astype(int)
 df.to_csv('train_fold.csv', index=False)
+cnt_df.to_csv('train_fold_cnt.csv', index=False)
