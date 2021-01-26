@@ -5,9 +5,6 @@ settings:
   train_anns: coco_vinai_train1024.json
   val_anns: coco_vinai_val1024.json
 
-  # mean and std in RGB order, actually this part should remain unchanged as long as your dataset is similar to coco.
-  mean: [0.485, 0.456, 0.406]
-  std: [0.229, 0.224, 0.225]
 
   # this is coco anchors, change it if necessary
   anchors_scales: '[2 ** 0, 2 ** (1.0 / 3.0), 2 ** (2.0 / 3.0)]'
@@ -36,6 +33,8 @@ settings:
 
   # custom augmentations
   augmentations:
+    mean: [0.5]
+    std: [0.5]
     image_size: [1024,1024]
     horizontal_flip: 0.5
     shear: 0

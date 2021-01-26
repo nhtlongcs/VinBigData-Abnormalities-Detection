@@ -1045,7 +1045,7 @@ def get_augmentation(config, types = 'train'):
         enable_if(config.get('colorjitter') is not None and types == 'train', ColorJitter(**config['colorjitter'])),
         ToTensor(),
         enable_if(config.get('cutout', 0) > 0 and types == 'train', Cutout(config['cutout'])),
-        Normalize(mean = config.mean, std=config.std, box_transform=False)
+        Normalize(mean = config.get('mean', 0.5), std=config.get('std', 0.5), box_transform=False)
     
     ])
 
