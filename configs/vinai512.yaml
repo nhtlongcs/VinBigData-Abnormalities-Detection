@@ -35,11 +35,11 @@ settings:
 
   # custom augmentations
   augmentations:
-    mean: [0.5]
-    std: [0.5]
+    mean: [0.5, 0.5, 0.5]
+    std: [0.5, 0.5, 0.5]
     image_size: [512,512]
-    horizontal_flip: 0.5
-    shear: 0
+    horizontal_flip: 0
+    shear: 10
     cutout: 0
     rotation: 0 # function has bugs
     colorjitter: 
