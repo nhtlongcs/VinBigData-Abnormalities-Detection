@@ -86,7 +86,7 @@ def train(args, config):
         dataset=testset,
         min_conf = 0.15,
         min_iou = 0.2,
-        retransforms = val_transforms)
+        retransforms = None)
 
     model = Detector(
             n_classes=NUM_CLASSES,

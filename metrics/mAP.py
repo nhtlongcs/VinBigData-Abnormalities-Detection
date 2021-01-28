@@ -86,7 +86,9 @@ class mAPScores(TemplateMetric):
                     self.image_ids.append(image_id)
                     batch['imgs'] = batch['imgs'].to(self.model.device)
                     preds = self.model.inference_step(batch, self.min_conf, self.min_iou)
-                    preds = postprocessing(preds, batch['imgs'].cpu()[0], self.retransforms, out_format='xywh')[0]
+
+                    if self.retransforms is not None:
+                        preds = postprocessing(preds, batch['imgs'].cpu()[0], self.retransforms, out_format='xywh')[0]
                     
 
                     bbox_xywh = preds['bboxes']
