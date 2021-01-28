@@ -20,10 +20,11 @@ def main(args, config):
 
     val_transforms = get_augmentation(config.augmentations, types = 'val')
     retransforms = Compose([
-        Denormalize(box_transform=False),
+        Denormalize(mean=config.augmentations['mean'], std=config.augmentations['std'], box_transform=False),
         ToPILImage(),
-        Resize(size = config.tile_size)
-    ])
+        Resize(size = config.augmentations['image_size'])]))
+
+    
 
     idx_classes = {idx:i for idx,i in enumerate(config.obj_list)}
     NUM_CLASSES = len(config.obj_list)
@@ -41,16 +42,6 @@ def main(args, config):
     if args.weight is not None:                
         load_checkpoint(model, args.weight)
 
-    # Tiling
-    xs = config.xs
-    ys = config.ys
-    w,h = config.tile_size
-
-    tiles = []
-    for y in ys:
-        for x in xs:
-            tiles.append([x,y,w,h])
-
     if args.images is not None or args.image is not None:
         if args.images is not None:
             args.images, output_dir = args.images.split(':')
@@ -65,36 +56,21 @@ def main(args, config):
             batch_size = 2
             empty_imgs = 0
             results = []
-            for img_path in paths:
+            batch = []
+            for img_idx, img_path in enumerate(paths):
                 image_id = int(os.path.basename(img_path)[:-4])
                 pil_img = Image.open(img_path).convert('RGB') 
-
-                cropped_imgs = []
-                for idx, tile in enumerate(tiles):
-                    cropped_img = cropFromImage(pil_img, tile)
-                    cropped_imgs.append(cropped_img)
-
-                batch = []
                 outputs = []
-                for img_idx, img in enumerate(cropped_imgs):
-                    batch.append(img)
-                    if ((img_idx+1) % batch_size == 0) or img_idx==len(cropped_imgs)-1:
-                        
-                        inputs = torch.stack([val_transforms(img)['img'] for img in batch])
-                        batch = {'imgs': inputs.to(device)}
-                        preds = model.inference_step(batch, args.min_conf, args.min_iou)
-                        preds = postprocessing(preds, batch['imgs'].cpu()[0], retransforms, out_format='xywh')
-                        outputs += preds
-                        batch = []
+                batch.append(pil_img)
+                if ((img_idx+1) % batch_size == 0) or img_idx==len(paths)-1:
+                    
+                    inputs = torch.stack([val_transforms(img)['img'] for img in batch])
+                    batch = {'imgs': inputs.to(device)}
+                    preds = model.inference_step(batch, args.min_conf, args.min_iou)
+                    preds = postprocessing(preds, batch['imgs'].cpu()[0], retransforms, out_format='xywh')
+                    outputs += preds
+                    batch = []
 
-                tile_idx = 0
-                for y in ys:
-                    for x in xs:
-                        for box in outputs[tile_idx]['bboxes']:
-                            box[0] += x
-                            box[1] += y
-                        tile_idx += 1 
-                
                 try:
                     boxes = np.concatenate([i['bboxes'] for i in outputs if len(i['bboxes'])>0]) 
                     labels = np.concatenate([i['classes'] for i in outputs if len(i['bboxes'])>0])    
