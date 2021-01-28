@@ -90,7 +90,7 @@ class mAPScores(TemplateMetric):
                     if self.retransforms is not None:
                         preds = postprocessing(preds, batch['imgs'].cpu()[0], self.retransforms, out_format='xywh')[0]
                     
-
+                    preds = preds[0]
                     bbox_xywh = preds['bboxes']
                     cls_ids = preds['classes']
                     cls_conf = preds['scores']
