@@ -20,8 +20,8 @@ def train(args, config):
     else:
         torch.manual_seed(42)
 
-    train_transforms = get_augmentation(config.augmentations, types = 'train')
-    val_transforms = get_augmentation(config.augmentations, types = 'val')
+    train_transforms = get_augmentation(config, _type = 'train')
+    val_transforms = get_augmentation(config, _type = 'val')
 
     #input_sizes = [512, 640, 768, 896, 1024, 1280, 1280, 1536, 1536]
     trainset = CocoDataset(
@@ -86,10 +86,7 @@ def train(args, config):
         dataset=testset,
         min_conf = 0.15,
         min_iou = 0.2,
-        retransforms = Compose([
-            Denormalize(mean=config.augmentations['mean'], std=config.augmentations['std'], box_transform=False),
-            ToPILImage(),
-            Resize(size = config.augmentations['image_size'])]))
+        retransforms = val_transforms)
 
     model = Detector(
             n_classes=NUM_CLASSES,

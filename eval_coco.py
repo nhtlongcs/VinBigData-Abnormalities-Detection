@@ -12,7 +12,6 @@ from pycocotools.cocoeval import COCOeval
 from models.backbone import EfficientDetBackbone
 from utils.utils import postprocessing, box_nms_numpy
 
-from utils.tiling import cropFromImage
 
 def _eval(coco_gt, image_ids, pred_json_path):
     # load results in COCO evaluation tool
@@ -30,10 +29,9 @@ def main(args, config):
 
     val_transforms = get_augmentation(config.augmentations, types = 'val')
     retransforms = Compose([
-        Denormalize(box_transform=False),
+        Denormalize(mean=config.augmentations['mean'], std=config.augmentations['std'], box_transform=False),
         ToPILImage(),
-        Resize(size = config.tile_size)
-    ])
+        Resize(size = config.augmentations['image_size'])])
 
     NUM_CLASSES = len(config.obj_list)
     net = EfficientDetBackbone(num_classes=NUM_CLASSES, compound_coef=args.compound_coef,
@@ -57,49 +55,27 @@ def main(args, config):
 
     results = []
 
-    xs = config.xs
-    ys = config.ys
-    w,h = config.tile_size
-
-    tiles = []
-    for y in ys:
-        for x in xs:
-            tiles.append([x,y,w,h])
-
     with torch.no_grad():
         batch_size = 2
         with tqdm(total=len(image_ids)) as pbar:
             empty_imgs = 0
-            for idx, image_id in enumerate(image_ids):
+            batch = []
+            for img_idx, image_id in enumerate(image_ids):
                 image_info = coco_gt.loadImgs(image_id)[0]
                 image_path = os.path.join(img_path,image_info['file_name'])
 
                 img = Image.open(image_path).convert('RGB')
-                cropped_imgs = []
-                for idx, tile in enumerate(tiles):
-                    cropped_img = cropFromImage(img, tile)
-                    cropped_imgs.append(cropped_img)
                 
-                batch = []
                 outputs = []
-                for img_idx, img in enumerate(cropped_imgs):
-                    batch.append(img)
-                    if ((img_idx+1) % batch_size == 0) or img_idx==len(cropped_imgs)-1:
-                        
-                        inputs = torch.stack([val_transforms(img)['img'] for img in batch])
-                        batch = {'imgs': inputs.to(device)}
-                        preds = model.inference_step(batch, args.min_conf, args.min_iou)
-                        preds = postprocessing(preds, batch['imgs'].cpu()[0], retransforms, out_format='xywh')
-                        outputs += preds
-                        batch = []
                 
-                tile_idx = 0
-                for y in ys:
-                    for x in xs:
-                        for box in outputs[tile_idx]['bboxes']:
-                            box[0] += x
-                            box[1] += y
-                        tile_idx += 1 
+                batch.append(img)
+                if ((img_idx+1) % batch_size == 0) or img_idx==len(image_ids)-1:
+                    inputs = torch.stack([val_transforms(img)['img'] for img in batch])
+                    batch = {'imgs': inputs.to(device)}
+                    preds = model.inference_step(batch, args.min_conf, args.min_iou)
+                    preds = postprocessing(preds, batch['imgs'].cpu()[0], retransforms, out_format='xywh')
+                    outputs += preds
+                    batch = []
 
                 try:
                     bbox_xywh = np.concatenate([i['bboxes'] for i in outputs if len(i['bboxes'])>0]) 

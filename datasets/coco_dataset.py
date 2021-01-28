@@ -10,11 +10,11 @@ import matplotlib.pyplot as plt
 import matplotlib.pyplot as patches
 
 from utils.utils import change_box_order
-from augmentations.transforms import Normalize
+from augmentations.transforms import Denormalize
 from torch.utils.data import Dataset, DataLoader
 from pycocotools.coco import COCO
+import albumentations as A
 import cv2
-
 
 class CocoDataset(Dataset):
     def __init__(self, root_dir, ann_path, inference=False, transforms=None):
@@ -56,12 +56,14 @@ class CocoDataset(Dataset):
         label = annot[:, -1]
         
         if self.transforms:
-            item = self.transforms(img = img, box = box, label = label)
-            img = item['img']
-            box = item['box']
-            label = item['label']
-            
-            box = change_box_order(box, order = 'xywh2xyxy')
+            item = self.transforms(image=img, bboxes=box, class_labels=label)
+            img = item['image']
+            box = item['bboxes']
+            label = item['class_labels']
+        
+        box = np.array([np.asarray(i) for i in box])
+        label = np.array(label)
+        box = change_box_order(box, order = 'xywh2xyxy')
             
         return {
             'img': img,
@@ -92,10 +94,11 @@ class CocoDataset(Dataset):
     def load_image(self, image_index):
         image_info = self.coco.loadImgs(self.image_ids[image_index])[0]
         path = os.path.join(self.root_dir, image_info['file_name'])
-  
-        img = Image.open(path).convert("RGB")
+        
+        image = cv2.imread(path)
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     
-        return img, image_info['file_name']
+        return image, image_info['file_name']
 
     def load_annotations(self, image_index):
         # get ground truth annotations
@@ -133,20 +136,16 @@ class CocoDataset(Dataset):
         img = item['img']
         box = item['box']
         label = item['label']
-
-        if any(isinstance(x, Normalize) for x in self.transforms.transforms_list):
-            normalize = True
-        else:
-            normalize = False
+        
+        normalize = False
+        for x in self.transforms.transforms:
+            if isinstance(x, A.Normalize):
+                normalize = True
+                denormalize = Denormalize(mean=x.mean, std=x.std)
 
         # Denormalize and reverse-tensorize
         if normalize:
-            results = self.transforms.denormalize(img = img, box = box, label = label)
-            img, label, box = results['img'], results['label'], results['box']
-    
-        # Numpify
-        label = label.numpy()
-        box = box.numpy()
+            img = denormalize(img = img)
 
         if self.mode == 'xyxy':
             box=change_box_order(box, 'xyxy2xywh')

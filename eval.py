@@ -22,7 +22,7 @@ def main(args, config):
     retransforms = Compose([
         Denormalize(mean=config.augmentations['mean'], std=config.augmentations['std'], box_transform=False),
         ToPILImage(),
-        Resize(size = config.augmentations['image_size'])]))
+        Resize(size = config.augmentations['image_size'])])
 
     
 
@@ -58,7 +58,7 @@ def main(args, config):
             results = []
             batch = []
             for img_idx, img_path in enumerate(paths):
-                image_id = int(os.path.basename(img_path)[:-4])
+                image_id = os.path.basename(img_path)[:-4]
                 pil_img = Image.open(img_path).convert('RGB') 
                 outputs = []
                 batch.append(pil_img)
