@@ -58,9 +58,9 @@ def get_augmentation(config, _type='train'):
 
     val_transforms = A.Compose([
         A.ToGray(),
-        A.LongestMaxSize(max_size=max(config.size)),
-        A.PadIfNeeded(min_height=config.size[1], min_width=config.size[0], p=1.0),
+        getResize(config),
         A.Normalize(mean=config.mean, std=config.std)
     ], bbox_params=A.BboxParams(format='coco', label_fields=['class_labels']))
     
+
     return train_transforms if _type == 'train' else val_transforms
