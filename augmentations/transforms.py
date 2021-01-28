@@ -45,10 +45,6 @@ def get_augmentation(config, _type='train'):
         ], p=0.2),
         A.ShiftScaleRotate(shift_limit=0.0625, scale_limit=0.2, rotate_limit=20, p=0.3),
         A.OneOf([
-            A.OpticalDistortion(p=0.3),
-            A.GridDistortion(p=.1),
-        ], p=0.2),
-        A.OneOf([
             A.CLAHE(clip_limit=2),
             A.RandomBrightnessContrast(p=0.3),            
         ], p=0.3),
