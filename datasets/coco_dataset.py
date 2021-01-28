@@ -64,7 +64,10 @@ class CocoDataset(Dataset):
         box = np.array([np.asarray(i) for i in box])
         label = np.array(label)
         box = change_box_order(box, order = 'xywh2xyxy')
-            
+        
+        label = torch.LongTensor(label)
+        box = torch.as_tensor(box, dtype=torch.float32) 
+
         return {
             'img': img,
             'box': box,

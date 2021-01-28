@@ -1,5 +1,5 @@
 settings:
-  project_name: "512"  # also the folder name of the dataset that under datasets folder
+  project_name: "vinai512"  # also the folder name of the dataset that under datasets folder
   train_imgs: train
   val_imgs: train
   train_anns: coco512_nms_train.json

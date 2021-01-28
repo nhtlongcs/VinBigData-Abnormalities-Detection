@@ -1,5 +1,6 @@
 import numpy as np
 import albumentations as A
+from albumentations.pytorch.transforms import ToTensor
 
 class Denormalize(object):
     """
@@ -24,14 +25,13 @@ class Denormalize(object):
 def getResize(config):
     if not config.keep_ratio:
         return A.Resize(
-            height = config.size[1],
-            width = config.size[0]
+            height = config.image_size[1],
+            width = config.image_size[0]
         )
     else:
-        return *zip(
-            A.LongestMaxSize(max_size=max(config.size)),
-            A.PadIfNeeded(min_height=config.size[1], min_width=config.size[0], p=1.0, border_mode=cv2.BORDER_CONSTANT),
-        )
+        return A.LongestMaxSize(max_size=max(config.image_size)), 
+        A.PadIfNeeded(min_height=config.image_size[1], min_width=config.image_size[0], p=1.0, border_mode=cv2.BORDER_CONSTANT),
+        
 
 def get_augmentation(config, _type='train'):
     train_transforms = A.Compose([
@@ -52,14 +52,16 @@ def get_augmentation(config, _type='train'):
             A.CLAHE(clip_limit=2),
             A.RandomBrightnessContrast(p=0.3),            
         ], p=0.3),
-        A.Normalize(mean=config.mean, std=config.std)
+        A.Normalize(mean=config.mean, std=config.std),
+        ToTensor()
     ], bbox_params=A.BboxParams(format='coco', label_fields=['class_labels']))
 
 
     val_transforms = A.Compose([
         A.ToGray(),
         getResize(config),
-        A.Normalize(mean=config.mean, std=config.std)
+        A.Normalize(mean=config.mean, std=config.std),
+        ToTensor()
     ], bbox_params=A.BboxParams(format='coco', label_fields=['class_labels']))
     
 
