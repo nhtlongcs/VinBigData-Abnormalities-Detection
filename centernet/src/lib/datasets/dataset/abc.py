@@ -35,11 +35,11 @@ class COCO(data.Dataset):
             ############# CHANGE PATH TO ANNOTATIONS TRAIN #################################
             if opt.task == "exdet":
                 self.annot_path = os.path.join(
-                    self.data_dir, "annotations", "train.json"
+                    self.data_dir, "annotations", "{}.json"
                 ).format(split)
             else:
                 self.annot_path = os.path.join(
-                    self.data_dir, "annotations", "train.json"
+                    self.data_dir, "annotations", "{}.json"
                 ).format(split)
         self.max_objs = 128
         ############# CHANGE TO CUSTOM CLASSES AND MATCH CLASSES IDS ####################
@@ -83,7 +83,7 @@ class COCO(data.Dataset):
         self.split = split
         self.opt = opt
 
-        print("==> initializing abc 2017 {} data.".format(split))
+        print("==> initializing VinBigData Xray {} data.".format(split))
         self.coco = coco.COCO(self.annot_path)
         self.images = self.coco.getImgIds()
         self.num_samples = len(self.images)
