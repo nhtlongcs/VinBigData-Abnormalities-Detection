@@ -35,7 +35,6 @@ def getResize(config):
 
 def get_augmentation(config, _type='train'):
     train_transforms = A.Compose([
-        A.ToGray(),
         getResize(config),
         A.OneOf([
             A.MotionBlur(p=.2),
@@ -54,7 +53,6 @@ def get_augmentation(config, _type='train'):
 
 
     val_transforms = A.Compose([
-        A.ToGray(),
         getResize(config),
         A.Normalize(mean=config.mean, std=config.std),
         ToTensor()
