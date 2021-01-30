@@ -152,6 +152,9 @@ class CocoDataset(Dataset):
 
         if self.mode == 'xyxy':
             box=change_box_order(box, 'xyxy2xywh')
+        
+        box = box.numpy()
+        label = label.numpy()
 
         self.visualize(img, box, label, figsize = figsize, img_name= img_name)
 
