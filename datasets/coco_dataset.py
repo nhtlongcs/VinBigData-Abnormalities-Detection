@@ -55,13 +55,7 @@ class CocoDataset(Dataset):
         annot = self.load_annotations(idx)
         box = annot[:, :4]
         label = annot[:, -1]
-        
-        if self.transforms:
-            item = self.transforms(image=img, bboxes=box, class_labels=label)
-            img = item['image']
-            box = item['bboxes']
-            label = item['class_labels']
-        
+    
         box = np.array([np.asarray(i) for i in box])
         label = np.array(label)
         box = change_box_order(box, order = 'xywh2xyxy')
@@ -75,6 +69,15 @@ class CocoDataset(Dataset):
             image, boxes, labels, img_id, img_name = self.load_cutmix_image_and_boxes(idx)
         else:
             image, boxes, labels, img_id, img_name = self.load_mixup_image_and_boxes(idx)
+
+                
+        if self.transforms:
+            item = self.transforms(image=image, bboxes=boxes, class_labels=labels)
+            image = item['image']
+            boxes = item['bboxes']
+            labels = item['class_labels']
+            boxes = np.array([np.asarray(i) for i in boxes])
+            labels = np.array(labels)
 
         labels = torch.LongTensor(labels)
         boxes = torch.as_tensor(boxes, dtype=torch.float32) 

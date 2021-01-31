@@ -44,15 +44,18 @@ def get_augmentation(config, _type='train'):
         ], p=0.2),
         A.ShiftScaleRotate(shift_limit=0.0625, scale_limit=0.2, rotate_limit=20, p=0.3),
         A.OneOf([
-            A.CLAHE(clip_limit=2),
-            A.RandomBrightnessContrast(p=0.3),            
-        ], p=0.3),
+            A.HueSaturationValue(hue_shift_limit=0.2, sat_shift_limit= 0.2, 
+                                 val_shift_limit=0.2, p=0.9),
+            A.RandomBrightnessContrast(brightness_limit=0.2, 
+                                       contrast_limit=0.2, 
+                                       p=0.3),            
+        ], p=0.5),
         A.HorizontalFlip(p=0.5),
         A.VerticalFlip(p=0.5),
         A.RandomRotate90(p=0.5),
         ToTensorV2()
     ], bbox_params=A.BboxParams(
-        format='coco',
+        format='pascal_voc',
         min_area=0, 
         min_visibility=0, 
         label_fields=['class_labels']))
@@ -62,7 +65,7 @@ def get_augmentation(config, _type='train'):
         getResize(config),
         ToTensorV2()
     ], bbox_params=A.BboxParams(
-        format='coco', 
+        format='pascal_voc', 
         min_area=0, 
         min_visibility=0,
         label_fields=['class_labels']))
