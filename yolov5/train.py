@@ -464,6 +464,7 @@ if __name__ == '__main__':
     parser.add_argument('--name', default='exp', help='save to project/name')
     parser.add_argument('--exist-ok', action='store_true', help='existing project/name ok, do not increment')
     parser.add_argument('--quad', action='store_true', help='quad dataloader')
+    parser.add_argument('--save-dir',default='', help='save model path')
     opt = parser.parse_args()
 
     # Set DDP variables
@@ -489,8 +490,9 @@ if __name__ == '__main__':
         assert len(opt.cfg) or len(opt.weights), 'either --cfg or --weights must be specified'
         opt.img_size.extend([opt.img_size[-1]] * (2 - len(opt.img_size)))  # extend to 2 sizes (train, test)
         opt.name = 'evolve' if opt.evolve else opt.name
-        opt.save_dir = increment_path(Path(opt.project) / opt.name, exist_ok=opt.exist_ok | opt.evolve)  # increment run
-
+        if opt.save_dir == '':
+            opt.save_dir = Path(opt.project)
+        opt.save_dir = increment_path(opt.save_dir / opt.name, exist_ok=opt.exist_ok | opt.evolve)  # increment run
     # DDP mode
     opt.total_batch_size = opt.batch_size
     device = select_device(opt.device, batch_size=opt.batch_size)
