@@ -66,29 +66,23 @@ class CocoDataset(Dataset):
         label = np.array(label)
         box = change_box_order(box, order = 'xywh2xyxy')
 
-        label = torch.LongTensor(label)
-        box = torch.as_tensor(box, dtype=torch.float32) 
-
-        return {
-            'img': img,
-            'box': box,
-            'label': label,
-            'img_id': img_id,
-            'img_name': img_name
-        }
+        return img, box, label, img_id, img_name
 
     def __getitem__(self, idx):
         if not self.train or random.random() > 0.33:
-            image, boxes, labels = self.load_image_and_boxes(idx)
+            image, boxes, labels, img_id, img_name = self.load_image_and_boxes(idx)
         elif random.random() > 0.5:
-            image, boxes, labels = self.load_cutmix_image_and_boxes(idx)
+            image, boxes, labels, img_id, img_name = self.load_cutmix_image_and_boxes(idx)
         else:
-            image, boxes, labels = self.load_mixup_image_and_boxes(idx)
+            image, boxes, labels, img_id, img_name = self.load_mixup_image_and_boxes(idx)
+
+        labels = torch.LongTensor(labels)
+        boxes = torch.as_tensor(boxes, dtype=torch.float32) 
 
         return {
-            'img': img,
-            'box': box,
-            'label': label,
+            'img': image,
+            'box': boxes,
+            'label': labels,
             'img_id': img_id,
             'img_name': img_name
         }
@@ -144,15 +138,11 @@ class CocoDataset(Dataset):
 
         return annotations
 
-    def load_mixup_image_and_boxes(dataset, index):
-        item = dataset[index]
-        image, boxes, labels = item['img'], item['box'], item['label']
+    def load_mixup_image_and_boxes(self, index):
+        image, boxes, labels, _, _ = self.load_image_and_boxes(index)    
+        r_image, r_boxes, r_labels, _, _ = self.load_image_and_boxes(1) #(random.randint(0, len(self.image_ids) - 1))
         
-        
-        item = dataset[random.randint(0, len(dataset.image_ids) - 1)]
-        r_image, r_boxes, r_labels = item['img'], item['box'], item['label']
-        
-        return (image+r_image)/2, np.vstack((boxes, r_boxes)).astype(np.int32), np.concatenate((labels, r_labels))
+        return (image+r_image)/2, np.vstack((boxes, r_boxes)).astype(np.int32), np.concatenate((labels, r_labels)),  None, None
 
 
     def load_cutmix_image_and_boxes(self, index, imsize=512):
@@ -164,15 +154,14 @@ class CocoDataset(Dataset):
         s = imsize // 2
     
         xc, yc = [int(random.uniform(imsize * 0.25, imsize * 0.75)) for _ in range(2)]  # center x, y
-        indexes = [index, index, index, index] #+ #[random.randint(0, len(dataset.image_ids) - 1) for _ in range(3)]
+        indexes = [index] + [random.randint(0, len(self.image_ids) - 1) for _ in range(3)]
 
         result_image = np.full((imsize, imsize, 3), 1, dtype=np.float32)
         result_boxes = []
         result_labels = np.array([], dtype=np.int)
         
-        for i, index in enumerate(indexes):
-            item = dataset[index]
-            image, boxes, labels = item['img'], item['box'], item['label']
+        for i,index in enumerate(indexes):
+            image, boxes, labels, _, _ = self.load_image_and_boxes(index)
             if i == 0:
                 x1a, y1a, x2a, y2a = max(xc - w, 0), max(yc - h, 0), xc, yc  # xmin, ymin, xmax, ymax (large image)
                 x1b, y1b, x2b, y2b = w - (x2a - x1a), h - (y2a - y1a), w, h  # xmin, ymin, xmax, ymax (small image)
@@ -205,7 +194,7 @@ class CocoDataset(Dataset):
         result_boxes = result_boxes[index_to_use]
         result_labels = result_labels[index_to_use]
         
-        return result_image, result_boxes, result_labels
+        return result_image, result_boxes, result_labels, None, None
 
     def visualize_item(self, index = None, figsize=(15,15)):
         """
