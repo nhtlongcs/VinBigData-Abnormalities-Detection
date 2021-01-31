@@ -1,6 +1,6 @@
 import numpy as np
 import albumentations as A
-from albumentations.pytorch.transforms import ToTensor
+from albumentations.pytorch.transforms import ToTensorV2
 
 class Denormalize(object):
     """
@@ -47,16 +47,25 @@ def get_augmentation(config, _type='train'):
             A.CLAHE(clip_limit=2),
             A.RandomBrightnessContrast(p=0.3),            
         ], p=0.3),
-        A.Normalize(mean=config.mean, std=config.std),
-        ToTensor()
-    ], bbox_params=A.BboxParams(format='coco', label_fields=['class_labels']))
+        A.HorizontalFlip(p=0.5),
+        A.VerticalFlip(p=0.5),
+        A.RandomRotate90(p=0.5),
+        ToTensorV2()
+    ], bbox_params=A.BboxParams(
+        format='coco',
+        min_area=0, 
+        min_visibility=0, 
+        label_fields=['class_labels']))
 
 
     val_transforms = A.Compose([
         getResize(config),
-        A.Normalize(mean=config.mean, std=config.std),
-        ToTensor()
-    ], bbox_params=A.BboxParams(format='coco', label_fields=['class_labels']))
+        ToTensorV2()
+    ], bbox_params=A.BboxParams(
+        format='coco', 
+        min_area=0, 
+        min_visibility=0,
+        label_fields=['class_labels']))
     
 
     return train_transforms if _type == 'train' else val_transforms

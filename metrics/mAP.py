@@ -97,15 +97,6 @@ class mAPScores(TemplateMetric):
 
                     if bbox_xywh is None or len(bbox_xywh) == 0:
                         empty_imgs += 1
-                        image_result = {
-                                'image_id': image_id,
-                                'category_id': 15,
-                                'score': 1.0,
-                                'bbox': [0,0,1,1],
-                            }
-
-                        results.append(image_result)
-
                     else:
                         for i in range(bbox_xywh.shape[0]):
                             score = float(cls_conf[i])
@@ -123,21 +114,29 @@ class mAPScores(TemplateMetric):
                     pbar.set_description(f'Empty images: {empty_imgs}')
 
         if not len(results):
-            raise Exception('the model does not provide any valid output, check model architecture and the data input')
+            return False
 
         # write output
         if os.path.exists(self.filepath):
             os.remove(self.filepath)
         json.dump(results, open(self.filepath, 'w'), indent=4)
+        return True
 
     def value(self):
-        self.compute()
-        stats = _eval(self.coco_gt, self.image_ids, self.filepath)
-        return {
-            "MAP" : np.round(float(stats[0]),self.decimals),
-            "MAPsmall" : np.round(float(stats[3]),self.decimals),
-            "MAPmedium" : np.round(float(stats[4]),self.decimals),
-            "MAPlarge" : np.round(float(stats[5]),self.decimals),}
+        result = self.compute()
+        if result:
+            stats = _eval(self.coco_gt, self.image_ids, self.filepath)
+            return {
+                "MAP" : np.round(float(stats[0]),self.decimals),
+                "MAPsmall" : np.round(float(stats[3]),self.decimals),
+                "MAPmedium" : np.round(float(stats[4]),self.decimals),
+                "MAPlarge" : np.round(float(stats[5]),self.decimals),}
+        else:
+            return {
+                "MAP" : 0.0,
+                "MAPsmall" : 0.0,
+                "MAPmedium" : 0.0,
+                "MAPlarge" : 0.0,}
 
     def __str__(self):
         return f'Mean Average Precision: {self.value()}'

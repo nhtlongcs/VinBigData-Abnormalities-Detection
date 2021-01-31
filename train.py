@@ -110,7 +110,7 @@ def train(args, config):
                      valloader,
                      checkpoint = Checkpoint(save_per_iter=args.save_interval, path = args.saved_path),
                      logger = Logger(log_dir=args.log_path),
-                     scheduler = torch.optim.lr_scheduler.StepLR(model.optimizer, step_size=30,gamma=0.1),
+                     scheduler = torch.optim.lr_scheduler.StepLR(model.optimizer, step_size=25,gamma=0.1),
                      evaluate_per_epoch = args.val_interval)
 
     print(trainer)
