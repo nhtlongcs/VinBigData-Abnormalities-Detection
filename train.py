@@ -22,26 +22,30 @@ def train(args, config):
 
     train_transforms = get_augmentation(config, _type = 'train')
     val_transforms = get_augmentation(config, _type = 'val')
+    
 
     #input_sizes = [512, 640, 768, 896, 1024, 1280, 1280, 1536, 1536]
     trainset = CocoDataset(
         root_dir = os.path.join('datasets', config.project_name, config.train_imgs),
         ann_path = os.path.join('datasets', config.project_name, config.train_anns),
         train=True,
-        transforms=train_transforms)
+        transforms=train_transforms,
+        input_size=config.image_size)
     
     valset = CocoDataset(
         root_dir=os.path.join('datasets', config.project_name, config.val_imgs), 
         ann_path = os.path.join('datasets', config.project_name, config.val_anns),
         train=False,
-        transforms=val_transforms)
+        transforms=val_transforms,
+        input_size=config.image_size)
     
     testset = CocoDataset(
         root_dir=os.path.join('datasets', config.project_name, config.val_imgs), 
         ann_path = os.path.join('datasets', config.project_name, config.val_anns),
         inference = True,
         train = False,
-        transforms=val_transforms)
+        transforms=val_transforms,
+        input_size=config.image_size)
 
     trainloader = DataLoader(
         trainset, 
