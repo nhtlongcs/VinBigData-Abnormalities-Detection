@@ -492,8 +492,9 @@ if __name__ == '__main__':
         opt.name = 'evolve' if opt.evolve else opt.name
         if opt.save_dir == '':
             opt.save_dir = Path(opt.project)
-        opt.save_dir = increment_path(opt.save_dir / opt.name, exist_ok=opt.exist_ok | opt.evolve)  # increment run
+        opt.save_dir = increment_path(Path(opt.save_dir) / opt.name, exist_ok=opt.exist_ok | opt.evolve)  # increment run
     # DDP mode
+    print('save dir is', opt.save_dir)
     opt.total_batch_size = opt.batch_size
     device = select_device(opt.device, batch_size=opt.batch_size)
     if opt.local_rank != -1:
