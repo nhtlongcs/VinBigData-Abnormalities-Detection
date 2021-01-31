@@ -70,7 +70,7 @@ class CocoDataset(Dataset):
         else:
             image, boxes, labels, img_id, img_name = self.load_mixup_image_and_boxes(idx)
 
-                
+                    
         if self.transforms:
             item = self.transforms(image=image, bboxes=boxes, class_labels=labels)
             image = item['image']

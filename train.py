@@ -27,17 +27,20 @@ def train(args, config):
     trainset = CocoDataset(
         root_dir = os.path.join('datasets', config.project_name, config.train_imgs),
         ann_path = os.path.join('datasets', config.project_name, config.train_anns),
+        train=True,
         transforms=train_transforms)
     
     valset = CocoDataset(
         root_dir=os.path.join('datasets', config.project_name, config.val_imgs), 
         ann_path = os.path.join('datasets', config.project_name, config.val_anns),
+        train=False,
         transforms=val_transforms)
     
     testset = CocoDataset(
         root_dir=os.path.join('datasets', config.project_name, config.val_imgs), 
         ann_path = os.path.join('datasets', config.project_name, config.val_anns),
         inference = True,
+        train = False,
         transforms=val_transforms)
 
     trainloader = DataLoader(
