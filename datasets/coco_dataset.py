@@ -10,18 +10,20 @@ import matplotlib.pyplot as plt
 import matplotlib.pyplot as patches
 
 from utils.utils import change_box_order
-from augmentations.transforms import Denormalize
+from augmentations.transforms import Denormalize, get_resize_augmentation
 from torch.utils.data import Dataset, DataLoader
 from pycocotools.coco import COCO
 import albumentations as A
 import cv2
 
 class CocoDataset(Dataset):
-    def __init__(self, root_dir, ann_path, train=True, inference=False, transforms=None):
+    def __init__(self, root_dir, ann_path, train=True, inference=False, transforms=None, input_size=None, keep_ratio=False):
 
         self.root_dir = root_dir
         self.ann_path = ann_path
         self.transforms = transforms
+        self.input_size = input_size
+        self.resize_transforms = get_resize_augmentation(input_size, keep_ratio)
         self.mode = 'xyxy'
         self.inference = inference
         self.train = train
@@ -55,10 +57,20 @@ class CocoDataset(Dataset):
         annot = self.load_annotations(idx)
         box = annot[:, :4]
         label = annot[:, -1]
-    
+        
+        box = change_box_order(box, order = 'xywh2xyxy')
+        if self.resize_transforms is not None:
+            resized = self.resize_transforms(
+                image=img,
+                bboxes=box,
+                class_labels=label)
+            img = resized['image']
+            box = resized['bboxes']
+            label = resized['class_labels']
+
         box = np.array([np.asarray(i) for i in box])
         label = np.array(label)
-        box = change_box_order(box, order = 'xywh2xyxy')
+        
 
         return img, box, label, img_id, img_name
 
@@ -66,11 +78,11 @@ class CocoDataset(Dataset):
         if not self.train or random.random() > 0.33:
             image, boxes, labels, img_id, img_name = self.load_image_and_boxes(idx)
         elif random.random() > 0.5:
-            image, boxes, labels, img_id, img_name = self.load_cutmix_image_and_boxes(idx)
+            image, boxes, labels, img_id, img_name = self.load_cutmix_image_and_boxes(idx, self.input_size)
         else:
             image, boxes, labels, img_id, img_name = self.load_mixup_image_and_boxes(idx)
 
-                    
+
         if self.transforms:
             item = self.transforms(image=image, bboxes=boxes, class_labels=labels)
             image = item['image']
@@ -148,18 +160,18 @@ class CocoDataset(Dataset):
         return (image+r_image)/2, np.vstack((boxes, r_boxes)).astype(np.int32), np.concatenate((labels, r_labels)),  None, None
 
 
-    def load_cutmix_image_and_boxes(self, index, imsize=512):
+    def load_cutmix_image_and_boxes(self, index, imsize=[512,512]):
         """ 
         This implementation of cutmix author:  https://www.kaggle.com/nvnnghia 
         Refactoring and adaptation: https://www.kaggle.com/shonenkov
         """
-        w, h = imsize, imsize
-        s = imsize // 2
+        w, h = imsize
+        s = imsize[0] // 2
     
-        xc, yc = [int(random.uniform(imsize * 0.25, imsize * 0.75)) for _ in range(2)]  # center x, y
+        xc, yc = [int(random.uniform(h * 0.25, w * 0.75)) for _ in range(2)]  # center x, y
         indexes = [index] + [random.randint(0, len(self.image_ids) - 1) for _ in range(3)]
 
-        result_image = np.full((imsize, imsize, 3), 1, dtype=np.float32)
+        result_image = np.full((h, w, 3), 1, dtype=np.float32)
         result_boxes = []
         result_labels = np.array([], dtype=np.int)
         
