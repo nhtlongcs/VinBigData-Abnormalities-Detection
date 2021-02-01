@@ -30,7 +30,6 @@ settings:
     'Pleural thickening',
     'Pneumothorax',
     'Pulmonary fibrosis',
-    'No Finding'
   ]
 
   # custom augmentations
