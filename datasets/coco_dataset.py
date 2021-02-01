@@ -10,20 +10,23 @@ import matplotlib.pyplot as plt
 import matplotlib.pyplot as patches
 
 from utils.utils import change_box_order
-from augmentations.transforms import Denormalize
+from augmentations.transforms import Denormalize, get_resize_augmentation
 from torch.utils.data import Dataset, DataLoader
 from pycocotools.coco import COCO
 import albumentations as A
 import cv2
 
 class CocoDataset(Dataset):
-    def __init__(self, root_dir, ann_path, inference=False, transforms=None):
+    def __init__(self, root_dir, ann_path, train=True, inference=False, transforms=None, input_size=None, keep_ratio=False):
 
         self.root_dir = root_dir
         self.ann_path = ann_path
         self.transforms = transforms
+        self.input_size = input_size
+        self.resize_transforms = get_resize_augmentation(input_size, keep_ratio)
         self.mode = 'xyxy'
         self.inference = inference
+        self.train = train
 
         self.coco = COCO(ann_path)
         self.image_ids = self.coco.getImgIds()
@@ -48,30 +51,53 @@ class CocoDataset(Dataset):
     def __len__(self):
         return len(self.image_ids)
 
-    def __getitem__(self, idx):
+    def load_image_and_boxes(self, idx):
         img, img_name = self.load_image(idx)
         img_id = self.image_ids[idx]
         annot = self.load_annotations(idx)
         box = annot[:, :4]
         label = annot[:, -1]
         
-        if self.transforms:
-            item = self.transforms(image=img, bboxes=box, class_labels=label)
-            img = item['image']
-            box = item['bboxes']
-            label = item['class_labels']
-        
+        box = change_box_order(box, order = 'xywh2xyxy')
+        if self.resize_transforms is not None:
+            resized = self.resize_transforms(
+                image=img,
+                bboxes=box,
+                class_labels=label)
+            img = resized['image']
+            box = resized['bboxes']
+            label = resized['class_labels']
+
         box = np.array([np.asarray(i) for i in box])
         label = np.array(label)
-        box = change_box_order(box, order = 'xywh2xyxy')
         
-        label = torch.LongTensor(label)
-        box = torch.as_tensor(box, dtype=torch.float32) 
+
+        return img, box, label, img_id, img_name
+
+    def __getitem__(self, idx):
+        if not self.train or random.random() > 0.33:
+            image, boxes, labels, img_id, img_name = self.load_image_and_boxes(idx)
+        elif random.random() > 0.5:
+            image, boxes, labels, img_id, img_name = self.load_cutmix_image_and_boxes(idx, self.input_size)
+        else:
+            image, boxes, labels, img_id, img_name = self.load_mixup_image_and_boxes(idx)
+
+
+        if self.transforms:
+            item = self.transforms(image=image, bboxes=boxes, class_labels=labels)
+            image = item['image']
+            boxes = item['bboxes']
+            labels = item['class_labels']
+            boxes = np.array([np.asarray(i) for i in boxes])
+            labels = np.array(labels)
+
+        labels = torch.LongTensor(labels)
+        boxes = torch.as_tensor(boxes, dtype=torch.float32) 
 
         return {
-            'img': img,
-            'box': box,
-            'label': label,
+            'img': image,
+            'box': boxes,
+            'label': labels,
             'img_id': img_id,
             'img_name': img_name
         }
@@ -99,8 +125,8 @@ class CocoDataset(Dataset):
         path = os.path.join(self.root_dir, image_info['file_name'])
         
         image = cv2.imread(path)
-        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-    
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB).astype(np.float32)
+        image /= 255.0
         return image, image_info['file_name']
 
     def load_annotations(self, image_index):
@@ -121,11 +147,69 @@ class CocoDataset(Dataset):
                 continue
 
             annotation = np.zeros((1, 5))
-            annotation[0, :4] = a['bbox']
+            annotation[0, :4] = a['bbox'] # xywh
             annotation[0, 4] = a['category_id'] - 1
             annotations = np.append(annotations, annotation, axis=0)
 
         return annotations
+
+    def load_mixup_image_and_boxes(self, index):
+        image, boxes, labels, _, _ = self.load_image_and_boxes(index)    
+        r_image, r_boxes, r_labels, _, _ = self.load_image_and_boxes(1) #(random.randint(0, len(self.image_ids) - 1))
+        
+        return (image+r_image)/2, np.vstack((boxes, r_boxes)).astype(np.int32), np.concatenate((labels, r_labels)),  None, None
+
+
+    def load_cutmix_image_and_boxes(self, index, imsize=[512,512]):
+        """ 
+        This implementation of cutmix author:  https://www.kaggle.com/nvnnghia 
+        Refactoring and adaptation: https://www.kaggle.com/shonenkov
+        """
+        w, h = imsize
+        s = imsize[0] // 2
+    
+        xc, yc = [int(random.uniform(h * 0.25, w * 0.75)) for _ in range(2)]  # center x, y
+        indexes = [index] + [random.randint(0, len(self.image_ids) - 1) for _ in range(3)]
+
+        result_image = np.full((h, w, 3), 1, dtype=np.float32)
+        result_boxes = []
+        result_labels = np.array([], dtype=np.int)
+        
+        for i,index in enumerate(indexes):
+            image, boxes, labels, _, _ = self.load_image_and_boxes(index)
+            if i == 0:
+                x1a, y1a, x2a, y2a = max(xc - w, 0), max(yc - h, 0), xc, yc  # xmin, ymin, xmax, ymax (large image)
+                x1b, y1b, x2b, y2b = w - (x2a - x1a), h - (y2a - y1a), w, h  # xmin, ymin, xmax, ymax (small image)
+            elif i == 1:  # top right
+                x1a, y1a, x2a, y2a = xc, max(yc - h, 0), min(xc + w, s * 2), yc
+                x1b, y1b, x2b, y2b = 0, h - (y2a - y1a), min(w, x2a - x1a), h
+            elif i == 2:  # bottom left
+                x1a, y1a, x2a, y2a = max(xc - w, 0), yc, xc, min(s * 2, yc + h)
+                x1b, y1b, x2b, y2b = w - (x2a - x1a), 0, max(xc, w), min(y2a - y1a, h)
+            elif i == 3:  # bottom right
+                x1a, y1a, x2a, y2a = xc, yc, min(xc + w, s * 2), min(s * 2, yc + h)
+                x1b, y1b, x2b, y2b = 0, 0, min(w, x2a - x1a), min(y2a - y1a, h)
+            
+            result_image[y1a:y2a, x1a:x2a] = image[y1b:y2b, x1b:x2b]
+            padw = x1a - x1b
+            padh = y1a - y1b
+
+            boxes[:, 0] += padw
+            boxes[:, 1] += padh
+            boxes[:, 2] += padw
+            boxes[:, 3] += padh
+
+            result_boxes.append(boxes)
+            result_labels = np.concatenate((result_labels, labels))
+            
+        result_boxes = np.concatenate(result_boxes, 0)
+        np.clip(result_boxes[:, 0:], 0, 2 * s, out=result_boxes[:, 0:])
+        result_boxes = result_boxes.astype(np.int32)
+        index_to_use = np.where((result_boxes[:,2]-result_boxes[:,0])*(result_boxes[:,3]-result_boxes[:,1]) > 0)
+        result_boxes = result_boxes[index_to_use]
+        result_labels = result_labels[index_to_use]
+        
+        return result_image, result_boxes, result_labels, None, None
 
     def visualize_item(self, index = None, figsize=(15,15)):
         """
@@ -141,17 +225,18 @@ class CocoDataset(Dataset):
         label = item['label']
         
         normalize = False
-        for x in self.transforms.transforms:
-            if isinstance(x, A.Normalize):
-                normalize = True
-                denormalize = Denormalize(mean=x.mean, std=x.std)
+        if self.transforms is not None:
+            for x in self.transforms.transforms:
+                if isinstance(x, A.Normalize):
+                    normalize = True
+                    denormalize = Denormalize(mean=x.mean, std=x.std)
 
         # Denormalize and reverse-tensorize
         if normalize:
             img = denormalize(img = img)
-
-        if self.mode == 'xyxy':
-            box=change_box_order(box, 'xyxy2xywh')
+        
+        box = box.numpy()
+        label = label.numpy()
 
         self.visualize(img, box, label, figsize = figsize, img_name= img_name)
 
@@ -161,6 +246,9 @@ class CocoDataset(Dataset):
         Visualize an image with its bouding boxes
         """
         fig,ax = plt.subplots(figsize=figsize)
+
+        if self.mode == 'xyxy':
+            boxes=change_box_order(boxes, 'xyxy2xywh')
 
         if isinstance(img, torch.Tensor):
             img = img.numpy().squeeze().transpose((1,2,0))

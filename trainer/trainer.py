@@ -7,7 +7,7 @@ import numpy as np
 from loggers.loggers import Logger
 from utils.utils import clip_gradient
 import time
-
+from utils.utils import box_nms_numpy, change_box_order
 
 class Trainer(nn.Module):
     def __init__(self, 
@@ -25,7 +25,18 @@ class Trainer(nn.Module):
         self.metrics = model.metrics #list of metrics
         self.set_attribute(kwargs)
         
-        
+    def visualize_batch(self):
+        self.model.eval()
+        with torch.no_grad():
+            batch = next(iter(self.valloader))
+            batch = batch.to(self.device)
+            outputs = self.model.inference_step(batch, min_conf = 0.05, min_iou = 0.15)
+            preds = outputs[0]
+            boxes = preds['bboxes']
+            labels = preds['classes']
+            scores = preds['scores']
+        return boxes, scores, labels
+            
 
     def fit(self, start_epoch = 0, start_iter = 0, num_epochs = 10 ,print_per_iter = None):
         self.num_epochs = num_epochs

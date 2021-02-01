@@ -13,7 +13,7 @@ from tqdm import tqdm
 import torch.nn as nn
 import torch.utils.data as data
 import torchvision.models as models
-from torch.optim.lr_scheduler import StepLR
+from torch.optim.lr_scheduler import StepLR, CosineAnnealingLR
 
 from .random_seed import seed_everything
 

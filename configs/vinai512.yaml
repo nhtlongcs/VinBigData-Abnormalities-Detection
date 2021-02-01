@@ -1,9 +1,9 @@
 settings:
   project_name: "vinai512"  # also the folder name of the dataset that under datasets folder
-  train_imgs: train
-  val_imgs: train
-  train_anns: coco512_nms_train.json
-  val_anns: coco512_nms_val.json
+  train_imgs: images/train
+  val_imgs: images/train
+  train_anns: annotations/nms512_fold0_train.json
+  val_anns: annotations/nms512_fold0_val.json
 
   # mean and std in RGB order, actually this part should remain unchanged as long as your dataset is similar to coco.
   
@@ -35,7 +35,5 @@ settings:
 
   # custom augmentations
   
-  mean: [0.5, 0.5, 0.5]
-  std: [0.5, 0.5, 0.5]
   image_size: [512,512]
   keep_ratio: False

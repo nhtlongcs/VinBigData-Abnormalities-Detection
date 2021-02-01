@@ -22,23 +22,30 @@ def train(args, config):
 
     train_transforms = get_augmentation(config, _type = 'train')
     val_transforms = get_augmentation(config, _type = 'val')
+    
 
     #input_sizes = [512, 640, 768, 896, 1024, 1280, 1280, 1536, 1536]
     trainset = CocoDataset(
         root_dir = os.path.join('datasets', config.project_name, config.train_imgs),
         ann_path = os.path.join('datasets', config.project_name, config.train_anns),
-        transforms=train_transforms)
+        train=True,
+        transforms=train_transforms,
+        input_size=config.image_size)
     
     valset = CocoDataset(
         root_dir=os.path.join('datasets', config.project_name, config.val_imgs), 
         ann_path = os.path.join('datasets', config.project_name, config.val_anns),
-        transforms=val_transforms)
+        train=False,
+        transforms=val_transforms,
+        input_size=config.image_size)
     
     testset = CocoDataset(
         root_dir=os.path.join('datasets', config.project_name, config.val_imgs), 
         ann_path = os.path.join('datasets', config.project_name, config.val_anns),
         inference = True,
-        transforms=val_transforms)
+        train = False,
+        transforms=val_transforms,
+        input_size=config.image_size)
 
     trainloader = DataLoader(
         trainset, 
@@ -110,7 +117,7 @@ def train(args, config):
                      valloader,
                      checkpoint = Checkpoint(save_per_iter=args.save_interval, path = args.saved_path),
                      logger = Logger(log_dir=args.log_path),
-                     scheduler = torch.optim.lr_scheduler.StepLR(model.optimizer, step_size=30,gamma=0.1),
+                     scheduler = torch.optim.lr_scheduler.StepLR(model.optimizer, step_size=25,gamma=0.1),
                      evaluate_per_epoch = args.val_interval)
 
     print(trainer)
