@@ -6,7 +6,7 @@ from tqdm import tqdm
 from pycocotools.coco import COCO
 from pycocotools.cocoeval import COCOeval
 from .metrictemplate import TemplateMetric
-from utils.utils import postprocessing, box_nms_numpy
+from utils.utils import postprocessing, box_nms_numpy, change_box_order
 
 
 def _eval(coco_gt, image_ids, pred_json_path, **kwargs):
@@ -89,9 +89,13 @@ class mAPScores(TemplateMetric):
 
                     if self.retransforms is not None:
                         preds = postprocessing(preds, batch['imgs'].cpu()[0], self.retransforms, out_format='xywh')[0]
-                    
+
                     preds = preds[0]
-                    bbox_xywh = preds['bboxes']
+
+                    if self.retransforms is not None:
+                        bbox_xywh = preds['bboxes']
+                    else:
+                        bbox_xywh = change_box_order(preds['bboxes'], order='xyxy2xywh')
                     cls_ids = preds['classes']
                     cls_conf = preds['scores']
 

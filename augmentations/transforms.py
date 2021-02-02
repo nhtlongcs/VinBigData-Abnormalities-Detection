@@ -65,7 +65,7 @@ def get_augmentation(config, _type='train'):
         A.HorizontalFlip(p=0.5),
         A.VerticalFlip(p=0.5),
         A.RandomRotate90(p=0.5),
-        ToTensorV2()
+        ToTensorV2(p=1.0)
     ], bbox_params=A.BboxParams(
         format='pascal_voc',
         min_area=0, 
@@ -74,7 +74,7 @@ def get_augmentation(config, _type='train'):
 
 
     val_transforms = A.Compose([
-        ToTensorV2()
+        ToTensorV2(p=1.0)
     ], bbox_params=A.BboxParams(
         format='pascal_voc', 
         min_area=0, 
