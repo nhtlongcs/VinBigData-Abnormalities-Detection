@@ -93,9 +93,12 @@ def main(args, config):
                 output_imgs.append(pil_img)
                 if ((img_idx+1) % batch_size == 0) or img_idx==len(paths)-1:
                     
-                    inputs = torch.stack([val_transforms(image=img, class_labels=temp)['image'] for img in output_imgs])
-                    batch = {'imgs': inputs.to(device)}
+                    inputs = torch.stack([val_transforms(image=img, class_labels=temp)['image'] for img in output_imgs]).to(device)
+                    batch = {'imgs': inputs}
                     preds = model.inference_step(batch, args.min_conf, args.min_iou)
+
+                    del inputs
+                    torch.cuda.empty_cache()
                     batch=[]
                     for idx, outputs in enumerate(preds):
                         boxes = outputs['bboxes'] 
