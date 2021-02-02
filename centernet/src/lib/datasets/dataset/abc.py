@@ -94,7 +94,6 @@ class COCO(data.Dataset):
         return float("{:.2f}".format(x))
 
     def convert_eval_format(self, all_bboxes):
-        # import pdb; pdb.set_trace()
         detections = []
         for image_id in all_bboxes:
             for cls_ind in all_bboxes[image_id]:
@@ -116,16 +115,23 @@ class COCO(data.Dataset):
                         extreme_points = list(map(self._to_float, bbox[5:13]))
                         detection["extreme_points"] = extreme_points
                     detections.append(detection)
+
         return detections
 
     def __len__(self):
         return self.num_samples
 
     def save_results(self, results, save_dir):
-        json.dump(
-            self.convert_eval_format(results),
-            open("{}/results.json".format(save_dir), "w"),
-        )
+        preds = self.convert_eval_format(results)
+        # import pdb; pdb.set_trace()
+        import numpy as np
+
+        def np_encoder(object):
+            if isinstance(object, np.generic):
+                return object.item()
+
+        with open("{}/results.json".format(save_dir), "w") as fp:
+            json.dump(preds, fp, default=np_encoder)
 
     def run_eval(self, results, save_dir):
         # result_json = os.path.join(save_dir, "results.json")
@@ -137,4 +143,6 @@ class COCO(data.Dataset):
         coco_eval.evaluate()
         coco_eval.accumulate()
         coco_eval.summarize()
+        stats = coco_eval.stats[[0]]
+        return stats[0], stats[3], stats[4], stats[5]
 
