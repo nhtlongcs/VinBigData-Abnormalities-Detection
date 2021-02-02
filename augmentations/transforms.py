@@ -62,9 +62,11 @@ def get_augmentation(config, _type='train'):
                                        contrast_limit=0.2, 
                                        p=0.3),            
         ], p=0.5),
-        A.HorizontalFlip(p=0.5),
-        A.VerticalFlip(p=0.5),
-        A.RandomRotate90(p=0.5),
+        A.OneOf([
+            A.HorizontalFlip(p=0.3),
+            A.VerticalFlip(p=0.3),
+            A.RandomRotate90(p=0.3),
+        ], p=0.3),
         ToTensorV2(p=1.0)
     ], bbox_params=A.BboxParams(
         format='pascal_voc',
