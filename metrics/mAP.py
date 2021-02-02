@@ -95,13 +95,15 @@ class mAPScores(TemplateMetric):
                     if self.retransforms is not None:
                         bbox_xywh = preds['bboxes']
                     else:
-                        bbox_xywh = change_box_order(preds['bboxes'], order='xyxy2xywh')
-                    cls_ids = preds['classes']
-                    cls_conf = preds['scores']
+                        bbox_xywh = preds['bboxes']
+                    
 
                     if bbox_xywh is None or len(bbox_xywh) == 0:
                         empty_imgs += 1
                     else:
+                        bbox_xywh = change_box_order(bbox_xywh, order='xyxy2xywh')
+                        cls_ids = preds['classes']
+                        cls_conf = preds['scores']
                         for i in range(bbox_xywh.shape[0]):
                             score = float(cls_conf[i])
                             label = int(cls_ids[i])
