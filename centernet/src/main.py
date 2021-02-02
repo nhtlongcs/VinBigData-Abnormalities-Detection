@@ -61,7 +61,7 @@ def main(opt):
     )
 
     print("Starting training...")
-    best = 1e10
+    best = -1
     for epoch in range(start_epoch + 1, opt.num_epochs + 1):
         mark = epoch if opt.save_all else "last"
         log_dict_train, _ = trainer.train(epoch, train_loader)
@@ -96,7 +96,7 @@ def main(opt):
             for k, v in log_dict_val.items():
                 logger.scalar_summary("val_{}".format(k), v, epoch)
                 logger.write("{} {:8f} | ".format(k, v))
-            if log_dict_val[opt.metric] < best:
+            if log_dict_val[opt.metric] > best:
                 best = log_dict_val[opt.metric]
                 save_model(os.path.join(opt.save_dir, "model_best.pth"), epoch, model)
         else:
