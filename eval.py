@@ -8,6 +8,7 @@ import torch
 from torch import nn
 from torch.utils.data import DataLoader
 from utils.utils import box_nms_numpy, draw_boxes_v2, change_box_order
+import pandas as pd
 
 def visualize(self, img, boxes, labels, figsize=(15,15), img_name=None):
   """
@@ -78,78 +79,63 @@ def main(args, config):
             results = []
             batch = []
             temp = []
+            output_names = []
+            output_imgs = []
             for img_idx, img_path in enumerate(paths):
                 image_id = os.path.basename(img_path)[:-4]
+                output_names.append(os.path.join(output_dir, image_id+'.png'))
                 pil_img = cv2.imread(img_path)
                 pil_img = cv2.cvtColor(pil_img, cv2.COLOR_BGR2RGB).astype(np.float32)
                 pil_img /= 255.0
                 pil_img = cv2.resize(pil_img, tuple(config.image_size))
                 temp.append(0)
                 outputs = []
-                batch.append(pil_img)
+                output_imgs.append(pil_img)
                 if ((img_idx+1) % batch_size == 0) or img_idx==len(paths)-1:
                     
-                    inputs = torch.stack([val_transforms(image=img, class_labels=temp)['image'] for img in batch])
+                    inputs = torch.stack([val_transforms(image=img, class_labels=temp)['image'] for img in output_imgs])
                     batch = {'imgs': inputs.to(device)}
-                    outputs = model.inference_step(batch, args.min_conf, args.min_iou)
-                    try:
-                        boxes = np.concatenate([i['bboxes'] for i in outputs if len(i['bboxes'])>0]) 
-                        labels = np.concatenate([i['classes'] for i in outputs if len(i['bboxes'])>0])    
-                        scores = np.concatenate([i['scores'] for i in outputs if len(i['bboxes'])>0])
-                        boxes, scores, labels = box_nms_numpy(boxes, scores, labels, threshold=0.001, box_format='xywh')
-                        boxes = change_box_order
-                    except:
-                      boxes = None
+                    preds = model.inference_step(batch, args.min_conf, args.min_iou)
+                    batch=[]
+                    for idx, outputs in enumerate(preds):
+                        boxes = outputs['bboxes'] 
+                        labels = outputs['classes']  
+                        scores = outputs['scores']
+                        if len(boxes) == 0:
+                            empty_imgs += 1
+                            boxes = None
+                        else:
+                            boxes = change_box_order(boxes, order='xyxy2xywh')
+                            boxes, scores, labels = box_nms_numpy(boxes, scores, labels, threshold=0.4, box_format='xywh')
+                        if boxes is not None:
+                            draw_boxes_v2(output_names[idx], output_imgs[idx], boxes, labels, scores, idx_classes)
 
-                    if boxes is not None:
-                      draw_boxes_v2(output_name, pil_img, boxes, labels, scores, idx_classes)
-                    
-            #     try:
-            #         boxes = np.concatenate([i['bboxes'] for i in outputs if len(i['bboxes'])>0]) 
-            #         labels = np.concatenate([i['classes'] for i in outputs if len(i['bboxes'])>0])    
-            #         scores = np.concatenate([i['scores'] for i in outputs if len(i['bboxes'])>0])
-            #         boxes, scores, labels = box_nms_numpy(boxes, scores, labels, threshold=0.001, box_format='xywh')
-            #     except:
-            #         boxes = None
-                
-            #     if boxes is None:
-            #         empty_imgs += 1        
-            #     else:
-            #         for i in range(boxes.shape[0]):
-            #             score = float(scores[i])
-            #             label = int(labels[i])
-            #             box = boxes[i, :]
-            #             image_result = {
-            #                 'image_id': image_id,
-            #                 'category_id': label + 1,
-            #                 'score': float(score),
-            #                 'bbox': box.tolist(),
-            #             }
 
-            #             results.append(image_result)
-
-            #         image_name = os.path.basename(img_path)
-            #         if args.images is not None:
-            #             draw_boxes_v2(os.path.join(output_dir, image_name), pil_img, boxes, labels, scores, idx_classes)
-            #         elif args.image is not None:
-            #             draw_boxes_v2(output_name, pil_img, boxes, labels, scores, idx_classes)
-                 
-            #     pbar.update(1)
-            #     pbar.set_description(f'Empty images: {empty_imgs}')
+                        if args.submission:
+                            if boxes is not None:
+                                pred_strs = []
+                                for box, score, cls_id in zip(boxes, scores, labels):
+                                    x,y,w,h = box
+                                    pred_strs.append(f'{cls_id} {score} {x} {y} {w} {h}')
+                                pred_str = ' '.join(pred_strs)
+                            else:
+                                pred_str = '14 1 0 0 1 1'
+                            image_id = os.path.basename(output_names[idx])[:-4]
+                            results.append([image_id, pred_str])
+    
+                pbar.update(batch_size)
+                pbar.set_description(f'Empty images: {empty_imgs}')
             
-            # if args.submission:
-            #     filepath = os.path.join(output_dir, f'{config.project_name}_submission.json')
-            #     if os.path.exists(filepath):
-            #         os.remove(filepath)
-            #     json.dump(results, open(filepath, 'w'), indent=4)
-
+            if args.submission:
+                submission_df = pd.DataFrame(results, columns=['image_id', 'PredictionString'])
+                submission_df.to_csv('results/submission.csv', index=False)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Inference AIC Challenge Dataset')
     parser.add_argument('--image', type=str, default=None,  help='path to image')
     parser.add_argument('--images', type=str, default=None,  help='path to image')
-    parser.add_argument('--min_conf', type=float, default= 0.15, help='minimum confidence for an object to be detect')
-    parser.add_argument('--min_iou', type=float, default=0.3, help='minimum iou threshold for non max suppression')
+    parser.add_argument('--min_conf', type=float, default= 0.3, help='minimum confidence for an object to be detect')
+    parser.add_argument('--min_iou', type=float, default=0.4, help='minimum iou threshold for non max suppression')
     parser.add_argument('-c', type=int, default = 2, help='version of EfficentDet')
     parser.add_argument('--weight', type=str, default = 'weights/efficientdet-d2.pth',help='version of EfficentDet')
     parser.add_argument('--output_path', type=str, default = None, help='name of output to .avi file')
