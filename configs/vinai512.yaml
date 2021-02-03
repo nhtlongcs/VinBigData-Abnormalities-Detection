@@ -1,10 +1,10 @@
 settings:
-  project_name: "vinai512"  # also the folder name of the dataset that under datasets folder
+  project_name: "vinai512-wbf"  # also the folder name of the dataset that under datasets folder
   train_imgs: images/train
   val_imgs: images/train
   test_imgs: images/test
-  train_anns: annotations/nms512_fold0_train.json
-  val_anns: annotations/nms512_fold0_val.json
+  train_anns: annotations/vinai512_wbf_train.json
+  val_anns: annotations/vinai512_wbf_val.json
 
   # mean and std in RGB order, actually this part should remain unchanged as long as your dataset is similar to coco.
   
@@ -38,5 +38,5 @@ settings:
   image_size: [512,512]
   keep_ratio: False
 
-  cutmix: True
-  mixup: True
+  cutmix: False
+  mixup: False

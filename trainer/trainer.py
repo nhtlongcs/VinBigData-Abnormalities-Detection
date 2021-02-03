@@ -29,7 +29,6 @@ class Trainer(nn.Module):
         self.model.eval()
         with torch.no_grad():
             batch = next(iter(self.valloader))
-            batch = batch.to(self.device)
             outputs = self.model.inference_step(batch, min_conf = 0.05, min_iou = 0.15)
             preds = outputs[0]
             boxes = preds['bboxes']

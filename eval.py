@@ -122,7 +122,7 @@ def main(args, config):
                         boxes = None
                     else:
                         boxes = change_box_order(boxes, order='xyxy2xywh')
-                        boxes, scores, labels = box_nms_numpy(boxes, scores, labels, threshold=0.15, box_format='xywh')
+                        #boxes, scores, labels = box_nms_numpy(boxes, scores, labels, threshold=0.15, box_format='xywh')
                     if boxes is not None:
                         if args.output_path is not None:
                             out_path = os.path.join(args.output_path, f'{img_id}.png')

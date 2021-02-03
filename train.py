@@ -92,7 +92,7 @@ def train(args, config):
     metric = mAPScores(
         dataset=testset,
         min_conf = 0.3,
-        min_iou = 0.8,
+        min_iou = 0.4,
         retransforms = None)
 
     model = Detector(
