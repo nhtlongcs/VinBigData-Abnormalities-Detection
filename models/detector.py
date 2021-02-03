@@ -60,7 +60,7 @@ class Detector(BaseModel):
             inputs, 
             anchors, 
             regression, 
-            classification, 
+            classification,   
             regressBoxes, 
             clipBoxes, 
             threshold = threshold, 
