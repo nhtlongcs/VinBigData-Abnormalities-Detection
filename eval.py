@@ -10,36 +10,9 @@ from torch.utils.data import DataLoader
 from utils.utils import box_nms_numpy, draw_boxes_v2, change_box_order
 import pandas as pd
 
-def visualize(self, img, boxes, labels, figsize=(15,15), img_name=None):
-  """
-  Visualize an image with its bouding boxes
-  """
-  fig,ax = plt.subplots(figsize=figsize)
-
-  if self.mode == 'xyxy':
-      boxes=change_box_order(boxes, 'xyxy2xywh')
-
-  if isinstance(img, torch.Tensor):
-      img = img.numpy().squeeze().transpose((1,2,0))
-  # Display the image
-  ax.imshow(img)
-
-  # Create a Rectangle patch
-  for box, label in zip(boxes, labels):
-      color = np.random.rand(3,)
-      x,y,w,h = box
-      rect = patches.Rectangle((x,y),w,h,linewidth=2,edgecolor = color,facecolor='none')
-      plt.text(x, y-3, self.labels[label], color = color, fontsize=20)
-      # Add the patch to the Axes
-      ax.add_patch(rect)
-
-  if img_name is not None:
-      plt.title(img_name)
-  plt.show()
-
-
 def main(args, config):
-
+    if args.submission:
+        test_df =  pd.read_csv('/content/main/datasets/test_info.csv')
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     if torch.cuda.is_available():
         torch.cuda.manual_seed(42)
@@ -74,7 +47,7 @@ def main(args, config):
             args.image, output_name = args.image.split(':')
             paths = [args.image]
         with tqdm(total=len(paths)) as pbar:
-            batch_size = 2
+            batch_size = 4
             empty_imgs = 0
             results = []
             batch = []
@@ -96,7 +69,7 @@ def main(args, config):
                     inputs = torch.stack([val_transforms(image=img, class_labels=temp)['image'] for img in output_imgs]).to(device)
                     batch = {'imgs': inputs}
                     with torch.no_grad():
-                        preds = model.inference_step(batch, args.min_conf, args.min_iou)
+                      preds = model.inference_step(batch, args.min_conf, args.min_iou)
 
                     del inputs
                     torch.cuda.empty_cache()
@@ -116,15 +89,25 @@ def main(args, config):
 
 
                         if args.submission:
+                            image_id = os.path.basename(output_names[idx])[:-4]
+
+                            row = test_df.loc[data["image_id"] == str(image_id)]
+                            img_w, img_h = row.w, row.h
+
                             if boxes is not None:
                                 pred_strs = []
                                 for box, score, cls_id in zip(boxes, scores, labels):
                                     x,y,w,h = box
+                                    x = round(float(x*1.0*img_w/config.image_size[0]))
+                                    y = round(float(y*1.0*img_h/config.image_size[1]))
+                                    w = round(float(w*1.0*img_w/config.image_size[0]))
+                                    h = round(float(h*1.0*img_h/config.image_size[1]))
                                     pred_strs.append(f'{cls_id} {score} {x} {y} {w} {h}')
                                 pred_str = ' '.join(pred_strs)
                             else:
                                 pred_str = '14 1 0 0 1 1'
-                            image_id = os.path.basename(output_names[idx])[:-4]
+                            
+
                             results.append([image_id, pred_str])
     
                 pbar.update(batch_size)
