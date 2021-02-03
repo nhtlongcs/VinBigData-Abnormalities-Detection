@@ -17,14 +17,16 @@ import albumentations as A
 import cv2
 
 class CocoDataset(Dataset):
-    def __init__(self, root_dir, ann_path, train=True, inference=False, transforms=None, input_size=None, keep_ratio=False):
-
+    def __init__(self, config, root_dir, ann_path, train=True, inference=False, transforms=None):
+        self.config = config
         self.root_dir = root_dir
         self.ann_path = ann_path
         self.transforms = transforms
-        self.input_size = input_size
-        self.resize_transforms = get_resize_augmentation(input_size, keep_ratio)
-        self.mode = 'xyxy'
+        self.image_size = config.image_size
+        self.mixup = config.mixup
+        self.cutmix = config.cutmix
+        self.resize_transforms = get_resize_augmentation(config.image_size, config.keep_ratio)
+        self.mode = 'xyxy' # Output format of the __getitem__
         self.inference = inference
         self.train = train
 
@@ -75,13 +77,22 @@ class CocoDataset(Dataset):
         return img, box, label, img_id, img_name
 
     def __getitem__(self, idx):
+        
         if not self.train or random.random() > 0.33:
             image, boxes, labels, img_id, img_name = self.load_image_and_boxes(idx)
-        elif random.random() > 0.5:
-            image, boxes, labels, img_id, img_name = self.load_cutmix_image_and_boxes(idx, self.input_size)
         else:
-            image, boxes, labels, img_id, img_name = self.load_mixup_image_and_boxes(idx)
-
+            if self.mixup and self.cutmix:
+                if random.random() > 0.5:
+                    image, boxes, labels, img_id, img_name = self.load_cutmix_image_and_boxes(idx, self.image_size)
+                else:
+                    image, boxes, labels, img_id, img_name = self.load_mixup_image_and_boxes(idx)
+            else:
+                if self.mixup:
+                    image, boxes, labels, img_id, img_name = self.load_mixup_image_and_boxes(idx)
+                elif self.cutmix:
+                    image, boxes, labels, img_id, img_name = self.load_cutmix_image_and_boxes(idx, self.image_size)
+                else:
+                    image, boxes, labels, img_id, img_name = self.load_image_and_boxes(idx)
 
         if self.transforms:
             item = self.transforms(image=image, bboxes=boxes, class_labels=labels)

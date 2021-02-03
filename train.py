@@ -26,26 +26,26 @@ def train(args, config):
 
     #input_sizes = [512, 640, 768, 896, 1024, 1280, 1280, 1536, 1536]
     trainset = CocoDataset(
+        config = config,
         root_dir = os.path.join('datasets', config.project_name, config.train_imgs),
         ann_path = os.path.join('datasets', config.project_name, config.train_anns),
         train=True,
-        transforms=train_transforms,
-        input_size=config.image_size)
+        transforms=train_transforms)
     
     valset = CocoDataset(
+        config = config,
         root_dir=os.path.join('datasets', config.project_name, config.val_imgs), 
         ann_path = os.path.join('datasets', config.project_name, config.val_anns),
         train=False,
-        transforms=val_transforms,
-        input_size=config.image_size)
+        transforms=val_transforms)
     
     testset = CocoDataset(
+        config = config,
         root_dir=os.path.join('datasets', config.project_name, config.val_imgs), 
         ann_path = os.path.join('datasets', config.project_name, config.val_anns),
         inference = True,
         train = False,
-        transforms=val_transforms,
-        input_size=config.image_size)
+        transforms=val_transforms)
 
     trainloader = DataLoader(
         trainset, 
@@ -92,7 +92,7 @@ def train(args, config):
     metric = mAPScores(
         dataset=testset,
         min_conf = 0.3,
-        min_iou = 0.4,
+        min_iou = 0.8,
         retransforms = None)
 
     model = Detector(
