@@ -2,6 +2,7 @@ settings:
   project_name: "vinai512"  # also the folder name of the dataset that under datasets folder
   train_imgs: images/train
   val_imgs: images/train
+  test_imgs: images/test
   train_anns: annotations/nms512_fold0_train.json
   val_anns: annotations/nms512_fold0_val.json
 
