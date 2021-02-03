@@ -56,6 +56,7 @@ class Detector(BaseModel):
 
         regressBoxes = BBoxTransform()
         clipBoxes = ClipBoxes()
+
         outputs = self.model.detect(
             inputs, 
             anchors, 
@@ -65,8 +66,8 @@ class Detector(BaseModel):
             clipBoxes, 
             threshold = threshold, 
             iou_threshold=iou_threshold)
-
-        return outputs
+            
+        return outputs  
 
     def evaluate_step(self, batch):
         inputs = batch["imgs"]

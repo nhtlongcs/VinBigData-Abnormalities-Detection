@@ -109,8 +109,8 @@ class EfficientDetBackbone(nn.Module):
             scores_per = scores[i, scores_over_thresh[i, :], ...]                               # [84, 1]
             scores_, classes_ = classification_per.max(dim=0)                                   # [84]
 
-            #anchors_nms_idx = batched_nms(transformed_anchors_per, scores_per[:, 0], classes_, iou_threshold=iou_threshold)
-            anchors_nms_idx = torchvision.ops.nms(transformed_anchors_per, scores_per[:, 0], iou_threshold=iou_threshold)
+            anchors_nms_idx = torchvision.ops.boxes.batched_nms(transformed_anchors_per, scores_per[:, 0], classes_, iou_threshold=iou_threshold)
+            # anchors_nms_idx = torchvision.ops.nms(transformed_anchors_per, scores_per[:, 0], iou_threshold=iou_threshold)
             if anchors_nms_idx.shape[0] != 0:
                 classes_ = classes_[anchors_nms_idx]
                 scores_ = scores_[anchors_nms_idx]
