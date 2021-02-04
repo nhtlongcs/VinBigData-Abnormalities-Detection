@@ -91,6 +91,3 @@ class Detector(BaseModel):
             outputs = self(inputs)
         return outputs
 
-    
-
-    
