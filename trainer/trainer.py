@@ -61,9 +61,9 @@ class Trainer(nn.Module):
                     if epoch % self.evaluate_per_epoch == 0 and epoch+1 >= self.evaluate_per_epoch:
                         self.evaluate_epoch()
                         
-                    
-                if self.scheduler is not None:
-                    self.scheduler.step()
+                # If use LR STEPS, uncomment these line    
+                # if self.scheduler is not None:
+                #     self.scheduler.step()
                 
 
             except KeyboardInterrupt:   
@@ -90,11 +90,16 @@ class Trainer(nn.Module):
 
             loss.backward()
             
-            # 
+            
             if self.clip_grad is not None:
                 clip_gradient(self.optimizer, self.clip_grad)
 
             self.optimizer.step()
+
+            # For Other LR Schedulers
+            if self.scheduler is not None:
+                self.scheduler.step()
+
             end_time = time.time()
 
             for (key,value) in loss_dict.items():
