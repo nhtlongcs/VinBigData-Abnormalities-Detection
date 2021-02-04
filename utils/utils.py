@@ -356,6 +356,8 @@ def draw_pred_gt_boxes(image_outname, img, boxes, labels, scores, image_name=Non
     # Plot ground truth boxes
     for box, label in zip(gt_boxes, gt_labels):
         label = int(label)
+        if label <0:
+            continue
         color = STANDARD_COLORS[label]
         x,y,w,h = box
         rect = patches.Rectangle((x,y),w,h,linewidth=1.5,edgecolor = color,facecolor='none')
