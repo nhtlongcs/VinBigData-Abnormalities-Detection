@@ -116,6 +116,7 @@ class CocoDataset(Dataset):
     def collate_fn(self, batch):
         imgs = torch.stack([s['img'] for s in batch])   
         img_ids = [s['img_id'] for s in batch]
+        img_names = [s['img_name'] for s in batch]
 
         if self.inference:
              return {'imgs': imgs, 'img_ids': img_ids}
@@ -129,7 +130,11 @@ class CocoDataset(Dataset):
                     annot_padded[idx, :annot.shape[0], :] = annot
         else:
             annot_padded = torch.ones((len(annots), 1, 5)) * -1
-        return {'imgs': imgs, 'labels': annot_padded, 'img_ids': img_ids}
+        return {
+            'imgs': imgs, 
+            'labels': annot_padded, 
+            'img_ids': img_ids,
+            'img_names': img_names}
 
     def load_image(self, image_index):
         image_info = self.coco.loadImgs(self.image_ids[image_index])[0]

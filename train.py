@@ -100,7 +100,7 @@ def train(args, config):
             model = net,
             criterion= FocalLoss(), 
             metrics=metric,
-            optimizer= torch.optim.Adam,
+            optimizer= torch.optim.AdamW,
             optim_params = {'lr': args.lr},     
             device = device)
 
@@ -118,7 +118,8 @@ def train(args, config):
                      checkpoint = Checkpoint(save_per_iter=args.save_interval, path = args.saved_path),
                      logger = Logger(log_dir=args.log_path),
                      scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(model.optimizer, T_max= len(trainloader), eta_min=1e-6, last_epoch=-1),
-                     evaluate_per_epoch = args.val_interval)
+                     evaluate_per_epoch = args.val_interval,
+                     visualize_when_val = args.no_visualization)
 
     print(trainer)
     trainer.fit(start_epoch = start_epoch, start_iter = start_iter, num_epochs=args.num_epochs, print_per_iter=10)
@@ -140,8 +141,9 @@ if __name__ == '__main__':
     parser.add_argument('--save_interval', type=int, default=1000, help='Number of steps between saving')
     parser.add_argument('--log_path', type=str, default='loggers/runs')
     parser.add_argument('--resume', type=str, default=None,
-                        help='whether to load weights from a checkpoint, set None to initialize, set \'last\' to load last checkpoint')
-    parser.add_argument('--saved_path', type=str, default='weights')
+                        help='whether to load weights from a checkpoint, set None to initialize')
+    parser.add_argument('--saved_path', type=str, default='./weights')
+    parser.add_argument('--no_visualization', action='store_false', help='whether to visualize box to ./sample when validating (for debug), default=on')
 
     args = parser.parse_args()
     config = Config(os.path.join('configs',args.config+'.yaml'))

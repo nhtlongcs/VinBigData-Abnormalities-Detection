@@ -25,18 +25,6 @@ class Trainer(nn.Module):
         self.metrics = model.metrics #list of metrics
         self.set_attribute(kwargs)
         
-    def visualize_batch(self):
-        self.model.eval()
-        with torch.no_grad():
-            batch = next(iter(self.valloader))
-            outputs = self.model.inference_step(batch, min_conf = 0.05, min_iou = 0.15)
-            preds = outputs[0]
-            boxes = preds['bboxes']
-            labels = preds['classes']
-            scores = preds['scores']
-        return boxes, scores, labels
-            
-
     def fit(self, start_epoch = 0, start_iter = 0, num_epochs = 10 ,print_per_iter = None):
         self.num_epochs = num_epochs
         self.num_iters = (num_epochs+1) * len(self.trainloader)
@@ -183,8 +171,52 @@ class Trainer(nn.Module):
         log_dict = {"Validation Loss/Epoch" : epoch_loss['T'] / len(self.valloader),}
         log_dict.update(metric_dict)
         self.logging(log_dict)
+
+        if self.visualize_when_val:
+            self.visualize_batch()
         
-    
+    def visualize_batch(self):
+        if not os.path.exists('./sample'):
+            os.mkdir('./sample')
+
+        self.model.eval()
+        with torch.no_grad():
+            batch = next(iter(self.valloader))
+            targets = batch['labels'].numpy()
+            image_names = batch['img_names']
+            imgs = batch['imgs']
+            outputs = self.model.inference_step(batch, threshold = 0.1, iou_threshold = 0.2)
+            for idx in range(len(outputs)):
+                img = imgs[idx]
+                image_name = image_names[idx]
+                image_outname = os.path.join('sample', f'{self.epoch}_{self.iters}_{idx}.jpg')
+
+                pred = outputs[idx]
+                boxes = pred['bboxes']
+                labels = pred['classes']
+                scores = pred['scores']
+
+                target = targets[idx]
+                target_boxes = target[:,:-1]
+                target_labels = target[:,-1]
+                
+                boxes = change_box_order(boxes, order='xyxy2xywh')
+                target_boxes = change_box_order(target_boxes, order='xyxy2xywh')
+
+                pred_gt_imgs = img
+                pred_gt_boxes = [boxes, target_boxes]
+                pred_gt_labels = [labels, target_labels]
+                pred_gt_scores = scores
+                pred_gt_name = image_name
+
+                draw_pred_gt_boxes(
+                    image_outname = image_outname, 
+                    img = img, 
+                    boxes = pred_gt_boxes, 
+                    labels = pred_gt_labels, 
+                    scores = pred_gt_scores,
+                    image_name = pred_gt_name,
+                    figsize=(15,15))
 
 
     def logging(self, logs):
@@ -216,6 +248,8 @@ class Trainer(nn.Module):
         self.clip_grad = None
         self.logger = None
         self.evaluate_per_epoch = 1
+        self.visualize_when_val = True
+
         for i,j in kwargs.items():
             setattr(self, i, j)
 

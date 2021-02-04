@@ -293,7 +293,7 @@ def draw_boxes(img, preds, obj_list):
         cv2.putText(img,text,(x1,y1+t_size[1]+4), cv2.FONT_HERSHEY_PLAIN, 1, [255,255,255], 2)
     return img
 
-def draw_boxes_v2(img_name, img, boxes, labels, scores, obj_list, figsize=(15,15)):
+def draw_boxes_v2(img_name, img, boxes, labels, scores, obj_list=None, figsize=(15,15)):
     """
     Visualize an image with its bouding boxes
     """
@@ -310,10 +310,61 @@ def draw_boxes_v2(img_name, img, boxes, labels, scores, obj_list, figsize=(15,15
         x,y,w,h = box
         rect = patches.Rectangle((x,y),w,h,linewidth=1.5,edgecolor = color,facecolor='none')
         score = np.round(score, 3)
-        text = '{}: {}'.format(obj_list[label], str(score))
+        if obj_list is not None:
+            text = '{}: {}'.format(obj_list[label], str(score))
+        else:
+            text = '{}: {}'.format(label, str(score))
         plt.text(x, y-3,text, color = color, fontsize=15)
         # Add the patch to the Axes
         ax.add_patch(rect)
     plt.axis('off')
     plt.savefig(img_name,bbox_inches='tight')
+    plt.close()
+
+def draw_pred_gt_boxes(image_outname, img, boxes, labels, scores, image_name=None, figsize=(15,15)):
+    """
+    Visualize an image with its bouding boxes
+    """
+    fig, (ax1, ax2) = plt.subplots(nrows=1, ncols=2, figsize=figsize)
+    if image_name is not None:
+        fig.suptitle(image_name)
+    if isinstance(img, torch.Tensor):
+        img = img.numpy().squeeze().transpose((1,2,0))
+    # Display the image
+    ax1.imshow(img)
+    ax2.imshow(img)
+    
+    ax1.set_title('Prediction')
+    ax2.set_title('Ground Truth')
+
+    # Split prediction  and ground truth
+    pred_boxes, pred_labels, pred_scores = boxes[0], labels[0], scores
+    gt_boxes, gt_labels = boxes[1], labels[1]
+
+    # Plot prediction boxes
+    for box, label, score in zip(pred_boxes, pred_labels, pred_scores):
+        label = int(label)
+        color = STANDARD_COLORS[label]
+        x,y,w,h = box
+        rect = patches.Rectangle((x,y),w,h,linewidth=1.5,edgecolor = color,facecolor='none')
+        score = np.round(score, 3)
+        text = '{}: {}'.format(label, str(score))
+        ax1.text(x, y-3,text, color = color, fontsize=15)
+        # Add the patch to the Axes
+        ax1.add_patch(rect)
+
+    # Plot ground truth boxes
+    for box, label in zip(gt_boxes, gt_labels):
+        label = int(label)
+        color = STANDARD_COLORS[label]
+        x,y,w,h = box
+        rect = patches.Rectangle((x,y),w,h,linewidth=1.5,edgecolor = color,facecolor='none')
+        score = np.round(score, 3)
+        text = '{}'.format(label)
+        ax2.text(x, y-3,text, color = color, fontsize=15)
+        # Add the patch to the Axes
+        ax2.add_patch(rect)
+
+    plt.axis('off')
+    plt.savefig(image_outname,bbox_inches='tight')
     plt.close()
