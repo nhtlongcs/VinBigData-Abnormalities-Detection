@@ -2,6 +2,10 @@ This directory contains all information and code related to preprocessing the or
 
 Resized dataset: https://www.kaggle.com/c/vinbigdata-chest-xray-abnormalities-detection/discussion/207955
 
-Currently we have two formats: COCO and YOLO.
-
 Method for removing overlapping bounding boxes: NMS or WBF.
+
+Then we split into k-folds (k = 5).
+
+Finally, we convert into one of two formats: COCO and YOLO.
+
+
