@@ -73,6 +73,7 @@ Example for above folder structure:
 ```
 
 ## Start training
+- Run command
 ```
 python train.py -c=<version number of EfficientDet> --config=<path to project config yaml file>
 ```
@@ -104,6 +105,7 @@ image_id | width | height
 002a34c58c5b758217ed1f584ccbcfe9 | 2345 | 2584
 ... | ... | ... 
 
+- Run command
 ```
 python eval.py -c=<version number of EfficientDet> --config=<path to project config yaml file>
 ```
@@ -114,4 +116,9 @@ python eval.py -c=<version number of EfficientDet> --config=<path to project con
     - ***--output_path***:  path to folder to save visualization, if None, no visualization to be made
     - ***--submission***:   flag, for output submission.csv file
     
-    
+## Result:   
+
+version | datasets | configs | val mAP@0.5| LB score 
+--- | --- | --- | --- | --- 
+efficiendet-d7 | nms-512-noratio + khong class "No Finding" | use Cutmix + Mixup, min-conf=0.3 | 0.186 | 0.113
+... | ... | ... | ... | ... 
