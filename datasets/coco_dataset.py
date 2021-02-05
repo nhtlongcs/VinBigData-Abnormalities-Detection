@@ -25,7 +25,7 @@ class CocoDataset(Dataset):
         self.image_size = config.image_size
         self.mixup = config.mixup
         self.cutmix = config.cutmix
-        self.resize_transforms = get_resize_augmentation(config.image_size, config.keep_ratio)
+        self.resize_transforms = get_resize_augmentation(config.image_size, config.keep_ratio, box_transforms=True)
         self.mode = 'xyxy' # Output format of the __getitem__
         self.inference = inference
         self.train = train
