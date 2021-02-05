@@ -38,9 +38,10 @@ class TestDataset(Dataset):
         img = cv2.imread(img_path)
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB).astype(np.float32)
         img /= 255.0
-        
+        label = np.array(0)
+
         if self.resize_transforms is not None:
-            resized = self.resize_transforms(image=img)
+            resized = self.resize_transforms(image=img, class_labels=label)
             img_ = resized['image']
             
 
@@ -150,7 +151,7 @@ def main(args, config):
                         else:
                             pred_str = '14 1 0 0 1 1'
                 
-                    results.append([img_id, pred_str])
+                        results.append([img_id, pred_str])
                 pbar.update(BATCH_SIZE)
                 pbar.set_description(f'Empty images: {empty_imgs}')
 
