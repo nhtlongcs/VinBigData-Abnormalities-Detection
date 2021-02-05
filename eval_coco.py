@@ -20,6 +20,7 @@ def _eval(coco_gt, image_ids, pred_json_path):
     # run COCO evaluation
     coco_eval = COCOeval(coco_gt, coco_pred, 'bbox')
     coco_eval.params.imgIds = image_ids
+    coco_eval.params.iouType = "bbox"
     coco_eval.params.iouThrs = np.array([0.4])
     coco_eval.evaluate()
     coco_eval.accumulate()
@@ -44,7 +45,7 @@ def main(args, config):
 
     metric = mAPScores(
         dataset=testset,
-        max_images = args.max_images
+        max_images = args.max_images,
         min_conf = args.min_conf,
         min_iou = args.min_iou,
         retransforms = None)
