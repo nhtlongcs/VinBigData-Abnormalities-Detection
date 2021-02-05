@@ -36,7 +36,7 @@ settings:
   # custom augmentations
   
   image_size: [512,512]
-  keep_ratio: False
+  keep_ratio: True
 
   cutmix: False
   mixup: False

@@ -1,3 +1,4 @@
+import cv2
 import numpy as np
 import albumentations as A
 from albumentations.pytorch.transforms import ToTensorV2
@@ -40,7 +41,7 @@ def get_resize_augmentation(image_size, keep_ratio=False, box_transforms = False
     else:
         return A.Compose([
             A.LongestMaxSize(max_size=max(image_size)), 
-            A.PadIfNeeded(min_height=image_size[1], min_width=config.image_size[0], p=1.0, border_mode=cv2.BORDER_CONSTANT),
+            A.PadIfNeeded(min_height=image_size[1], min_width=image_size[0], p=1.0, border_mode=cv2.BORDER_CONSTANT),
             ], 
             bbox_params=bbox_params)
         

@@ -22,7 +22,7 @@ class TestDataset(Dataset):
         self.root_dir = os.path.join('datasets', config.project_name, config.test_imgs)
         self.test_df = test_df
         self.transforms = transforms
-        self.resize_transforms = get_resize_augmentation(config.image_size, config.keep_ratio)
+        self.resize_transforms = get_resize_augmentation(config.image_size, config.keep_ratio, box_transforms=False)
         self.load_data()
 
     def load_data(self):

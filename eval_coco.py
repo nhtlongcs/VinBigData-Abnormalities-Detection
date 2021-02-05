@@ -67,77 +67,7 @@ def main(args, config):
     
     metric.update(model)
     metric.value()
-    # ann_path = os.path.join('datasets', config.project_name, config.val_anns)
-    # img_path = os.path.join('datasets', config.project_name, config.val_imgs)
-    # coco_gt = COCO(ann_path)
-    # image_ids = coco_gt.getImgIds()[:args.max_images]
 
-    # results = []
-
-    # with torch.no_grad():
-    #     batch_size = 2
-    #     with tqdm(total=len(image_ids)) as pbar:
-    #         empty_imgs = 0
-    #         batch = []
-    #         for img_idx, image_id in enumerate(image_ids):
-    #             image_info = coco_gt.loadImgs(image_id)[0]
-    #             image_path = os.path.join(img_path,image_info['file_name'])
-
-    #             img = Image.open(image_path).convert('RGB')
-                
-    #             outputs = []
-                
-    #             batch.append(img)
-    #             if ((img_idx+1) % batch_size == 0) or img_idx==len(image_ids)-1:
-    #                 inputs = torch.stack([val_transforms(img)['img'] for img in batch])
-    #                 batch = {'imgs': inputs.to(device)}
-    #                 preds = model.inference_step(batch, args.min_conf, args.min_iou)
-    #                 preds = postprocessing(preds, batch['imgs'].cpu()[0], retransforms, out_format='xywh')
-    #                 outputs += preds
-    #                 batch = []
-
-    #             try:
-    #                 bbox_xywh = np.concatenate([i['bboxes'] for i in outputs if len(i['bboxes'])>0]) 
-    #                 cls_ids = np.concatenate([i['classes'] for i in outputs if len(i['bboxes'])>0])    
-    #                 cls_conf = np.concatenate([i['scores'] for i in outputs if len(i['bboxes'])>0])
-         
-    #                 bbox_xywh, cls_conf, cls_ids = box_nms_numpy(bbox_xywh, cls_conf, cls_ids, threshold=0.01, box_format='xywh')
-    #             except:
-    #                 bbox_xywh = None
-                    
-    #             if bbox_xywh is None:
-    #                 empty_imgs += 1
-    #             else:
-    #                 for i in range(bbox_xywh.shape[0]):
-    #                     score = float(cls_conf[i])
-    #                     label = int(cls_ids[i])
-    #                     box = bbox_xywh[i, :]
-    #                     image_result = {
-    #                         'image_id': image_id,
-    #                         'category_id': label + 1,
-    #                         'score': float(score),
-    #                         'bbox': box.tolist(),
-    #                     }
-
-    #                     results.append(image_result)
-
-    #             pbar.update(1)
-    #             pbar.set_description(f'Empty images: {empty_imgs}')    
-
-    # if not len(results):
-    #     raise Exception('the model does not provide any valid output, check model architecture and the data input')
-
-    # # write output
-    # filepath = f'results/{config.project_name}_submission.json'
-    # if not os.path.exists('results'):
-    #     os.mkdir('results')
-
-    # if os.path.exists(filepath):
-    #     os.remove(filepath)
-
-    # json.dump(results, open(filepath, 'w'), indent=4)
-
-    # _eval(coco_gt, image_ids, filepath)
 
 
 if __name__ == '__main__':
