@@ -16,6 +16,7 @@ def _eval(coco_gt, image_ids, pred_json_path, **kwargs):
     # run COCO evaluation
     coco_eval = COCOeval(coco_gt, coco_pred, 'bbox')
     coco_eval.params.imgIds = image_ids
+    coco_eval.params.iouThrs = np.array([0.4])
     # Some params for COCO eval
     #imgIds = []
     #catIds = []
@@ -36,7 +37,7 @@ class mAPScores(TemplateMetric):
     def __init__(
             self,
             dataset, 
-            max_images = 2000,
+            max_images = -1,
             retransforms=None,
             min_conf = 0.3, 
             min_iou = 0.3, 

@@ -12,6 +12,7 @@ import pandas as pd
 from tqdm import tqdm
 import albumentations as A
 from albumentations.pytorch.transforms import ToTensorV2
+from augmentations.transforms import get_resize_augmentation
 
 BATCH_SIZE = 4
 
@@ -21,6 +22,7 @@ class TestDataset(Dataset):
         self.root_dir = os.path.join('datasets', config.project_name, config.test_imgs)
         self.test_df = test_df
         self.transforms = transforms
+        self.resize_transforms = get_resize_augmentation(config.image_size, config.keep_ratio)
         self.load_data()
 
     def load_data(self):
@@ -36,7 +38,11 @@ class TestDataset(Dataset):
         img = cv2.imread(img_path)
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB).astype(np.float32)
         img /= 255.0
-        img_ = cv2.resize(img, tuple(self.image_size))
+        
+        if self.resize_transforms is not None:
+            resized = self.resize_transforms(image=img)
+            img_ = resized['image']
+            
 
         if self.transforms is not None:
             img = self.transforms(image=img_)['image']
