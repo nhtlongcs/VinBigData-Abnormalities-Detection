@@ -48,7 +48,7 @@ class TestDataset(Dataset):
         if self.transforms is not None:
             img = self.transforms(image=img_)['image']
         return {
-            'ori_image': img,
+            'ori_image': img_,
             'image_id': image_id,
             'img': img,
             'image_w': image_w,
