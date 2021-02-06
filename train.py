@@ -5,7 +5,7 @@ import os
 import torch
 from torch import nn
 from torch.utils.data import DataLoader
-from utils.utils import init_weights
+from utils.utils import init_weights, one_cycle
 
 import torchvision
 
@@ -102,8 +102,8 @@ def train(args, config):
             model = net,
             criterion= FocalLoss(), 
             metrics=metric,
-            optimizer= torch.optim.AdamW,
-            optim_params = {'lr': args.lr},     
+            optimizer= torch.optim.SGD,
+            optim_params = {'lr': args.lr, 'momentum': 0.937, 'nesterov' :True, 'weight_decay': 0.0005},     
             device = device)
 
     if args.resume is not None:                
