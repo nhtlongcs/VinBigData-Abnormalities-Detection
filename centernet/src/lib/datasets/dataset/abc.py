@@ -143,6 +143,6 @@ class COCO(data.Dataset):
         coco_eval.evaluate()
         coco_eval.accumulate()
         coco_eval.summarize()
-        stats = coco_eval.stats[[0]]
+        stats = coco_eval.stats
         return stats[0], stats[3], stats[4], stats[5]
 
