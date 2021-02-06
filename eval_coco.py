@@ -76,8 +76,8 @@ if __name__ == '__main__':
     parser.add_argument('-c', '--compound_coef', type=int, default=0, help='coefficients of efficientdet')
     parser.add_argument('--max_images' , type=int, help='max number of images', default=10000)
     parser.add_argument('--weight' , type=str, help='project file that contains parameters')
-    parser.add_argument('--min_conf', type=float, default= 0.15, help='minimum confidence for an object to be detect')
-    parser.add_argument('--min_iou', type=float, default = 0.3, help='minimum iou threshold for non max suppression')
+    parser.add_argument('--min_conf', type=float, default= 0.2, help='minimum confidence for an object to be detect')
+    parser.add_argument('--min_iou', type=float, default = 0.15, help='minimum iou threshold for non max suppression')
 
     args = parser.parse_args()
     config = Config(os.path.join('configs',args.config+'.yaml'))

@@ -182,8 +182,8 @@ def main(args, config):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Inference AIC Challenge Dataset')
-    parser.add_argument('--min_conf', type=float, default= 0.3, help='minimum confidence for an object to be detect')
-    parser.add_argument('--min_iou', type=float, default=0.4, help='minimum iou threshold for non max suppression')
+    parser.add_argument('--min_conf', type=float, default= 0.2, help='minimum confidence for an object to be detect')
+    parser.add_argument('--min_iou', type=float, default=0.15, help='minimum iou threshold for non max suppression')
     parser.add_argument('-c', type=int, default = 2, help='version of EfficentDet')
     parser.add_argument('--weight', type=str, default = 'weights/efficientdet-d2.pth',help='version of EfficentDet')
     parser.add_argument('--output_path', type=str, default = None, help='name of output to .avi file')
