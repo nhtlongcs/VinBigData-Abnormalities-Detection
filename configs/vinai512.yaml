@@ -38,5 +38,5 @@ settings:
   image_size: [512,512]
   keep_ratio: True
 
-  cutmix: False
+  cutmix: True
   mixup: False

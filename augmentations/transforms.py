@@ -54,7 +54,7 @@ def get_augmentation(config, _type='train'):
             A.MedianBlur(blur_limit=3, p=0.3),
             A.Blur(blur_limit=3, p=0.1),
         ], p=0.2),
-        #A.ShiftScaleRotate(shift_limit=0.0625, scale_limit=0.2, rotate_limit=20, p=0.3),
+        A.ShiftScaleRotate(shift_limit=0.0625, scale_limit=0.2, rotate_limit=20, p=0.3),
         A.OneOf([
             A.HueSaturationValue(hue_shift_limit=0.2, sat_shift_limit= 0.2, 
                                  val_shift_limit=0.2, p=0.9),
