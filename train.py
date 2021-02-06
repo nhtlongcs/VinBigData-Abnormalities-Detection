@@ -102,8 +102,8 @@ def train(args, config):
             model = net,
             criterion= FocalLoss(), 
             metrics=metric,
-            optimizer= torch.optim.SGD,
-            optim_params = {'lr': args.lr, 'momentum': 0.937, 'nesterov' :True, 'weight_decay': 0.0005},     
+            optimizer= torch.optim.AdamW,
+            optim_params = {'lr': args.lr},     
             device = device)
 
     if args.resume is not None:                

@@ -6,8 +6,6 @@ settings:
   train_anns: annotations/wbf512_ratio_fold0_train.json
   val_anns: annotations/wbf512_ratio_fold0_val.json
 
-  # mean and std in RGB order, actually this part should remain unchanged as long as your dataset is similar to coco.
-  
 
   # this is coco anchors, change it if necessary
   anchors_scales: '[2 ** 0, 2 ** (1.0 / 3.0), 2 ** (2.0 / 3.0)]'

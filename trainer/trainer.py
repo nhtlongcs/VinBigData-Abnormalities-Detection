@@ -201,6 +201,8 @@ class Trainer(nn.Module):
                 target_boxes = target[:,:-1]
                 target_labels = target[:,-1]
                 
+                if len(boxes) == 0:
+                    continue
                 boxes = change_box_order(boxes, order='xyxy2xywh')
                 target_boxes = change_box_order(target_boxes, order='xyxy2xywh')
 
