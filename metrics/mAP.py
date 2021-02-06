@@ -37,7 +37,7 @@ class mAPScores(TemplateMetric):
     def __init__(
             self,
             dataset, 
-            max_images = -1,
+            max_images = 10000,
             retransforms=None,
             min_conf = 0.3, 
             min_iou = 0.3, 
