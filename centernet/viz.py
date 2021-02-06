@@ -3,7 +3,8 @@ from os.path import join
 import cv2
 from matplotlib import pyplot as plt
 
-annot_path = "../../inputs/nms512_ratio_fold0_train.json"
+annot_path = "../../inputs/nms512_ratio_fold0_val.json"
+
 img_dir = "../../inputs/512/train/"
 
 
@@ -37,7 +38,7 @@ def display_annotationbyname(json_path, name, img_dir):
 
 
 img, image_name = display_annotationbyname(
-    json_path=annot_path, name="0a0ac65c40a9ac441651e4bfbde03c4e", img_dir=img_dir
+    json_path=annot_path, name="051132a778e61a86eb147c7c6f564dfe", img_dir=img_dir
 )
 
 # img, image_name = display_annotation(json_path=annot_path, imageIds=0, img_dir=img_dir)

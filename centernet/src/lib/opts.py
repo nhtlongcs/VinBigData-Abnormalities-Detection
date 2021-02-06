@@ -534,7 +534,7 @@ class opts(object):
         default_dataset_info = {
             "ctdet": {
                 "default_resolution": [512, 512],
-                "num_classes": 4,  # ==========> CHANGE DATASET NUMBER CLASSES
+                "num_classes": 14,  # ==========> CHANGE DATASET NUMBER CLASSES
                 "mean": [0.408, 0.447, 0.470],
                 "std": [0.289, 0.274, 0.278],
                 "dataset": "coco",

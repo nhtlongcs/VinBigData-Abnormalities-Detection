@@ -15,7 +15,7 @@ image_ext = ["jpg", "jpeg", "png", "webp"]
 video_ext = ["mp4", "mov", "avi", "mkv"]
 time_stats = ["tot", "load", "pre", "net", "dec", "post", "merge"]
 
-
+conf_thresh = 0.3
 class_name = [
     "Aortic enlargement",
     "Atelectasis",
@@ -74,6 +74,7 @@ def demo(opt):
         else:
             image_names = [opt.demo]
         txt_path = os.path.join(save_dir, "preds.csv")
+        os.makedirs("/".join(map(str, txt_path.split("/")[:-1])), exist_ok=True)
         f = open(txt_path, "w")
 
         for image_name in tqdm(image_names):
@@ -85,18 +86,15 @@ def demo(opt):
             dets = ret["results"]
             img_id = image_name.split("/")[-1].split(".")[0]
             # print(txt_path)
-            try:
-                os.makedirs("/".join(map(str, txt_path.split("/")[:-1])))
-            except:
-                pass
             for key in dets.keys():
                 if key in dictionary.keys():
                     for i in range(len(dets[key])):
-                        if dets[key][i, 4] > 0.3:
+                        if dets[key][i, 4] > conf_thresh:
                             f.write(
-                                "{}, {}, {}, {}, {}, {}\n".format(
+                                "{}, {}, {}, {}, {}, {}, {}\n".format(
                                     img_id,
                                     dictionary[key],
+                                    float(dets[key][i, 4]),
                                     int(dets[key][i, 0]),
                                     int(dets[key][i, 1]),
                                     int(dets[key][i, 2]),
