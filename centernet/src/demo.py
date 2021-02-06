@@ -14,8 +14,8 @@ from detectors.detector_factory import detector_factory
 image_ext = ["jpg", "jpeg", "png", "webp"]
 video_ext = ["mp4", "mov", "avi", "mkv"]
 time_stats = ["tot", "load", "pre", "net", "dec", "post", "merge"]
-
-conf_thresh = 0.3
+normalize = True
+conf_thresh = 0.01
 class_name = [
     "Aortic enlargement",
     "Atelectasis",
@@ -76,8 +76,10 @@ def demo(opt):
         txt_path = os.path.join(save_dir, "preds.csv")
         os.makedirs("/".join(map(str, txt_path.split("/")[:-1])), exist_ok=True)
         f = open(txt_path, "w")
-
+        f.write("image_id,class_name,class_id,score,x_min,y_min,x_max,y_max\n")
         for image_name in tqdm(image_names):
+            if normalize:
+                h, w, _ = cv2.imread(image_name).shape
             ret = detector.run(image_name)
             time_str = ""
             for stat in time_stats:
@@ -90,17 +92,32 @@ def demo(opt):
                 if key in dictionary.keys():
                     for i in range(len(dets[key])):
                         if dets[key][i, 4] > conf_thresh:
-                            f.write(
-                                "{}, {}, {}, {}, {}, {}, {}\n".format(
-                                    img_id,
-                                    dictionary[key],
-                                    float(dets[key][i, 4]),
-                                    int(dets[key][i, 0]),
-                                    int(dets[key][i, 1]),
-                                    int(dets[key][i, 2]),
-                                    int(dets[key][i, 3]),
+                            if normalize:
+                                f.write(
+                                    "{}, {}, {}, {}, {}, {}, {}, {}\n".format(
+                                        img_id,
+                                        dictionary[key],
+                                        int(key),
+                                        float(dets[key][i, 4]),
+                                        float(dets[key][i, 0] / w),
+                                        float(dets[key][i, 1] / h),
+                                        float(dets[key][i, 2] / w),
+                                        float(dets[key][i, 3] / h),
+                                    )
                                 )
-                            )
+                            else:
+                                f.write(
+                                    "{}, {}, {}, {}, {}, {}, {}, {}\n".format(
+                                        img_id,
+                                        dictionary[key],
+                                        int(key),
+                                        float(dets[key][i, 4]),
+                                        int(dets[key][i, 0]),
+                                        int(dets[key][i, 1]),
+                                        int(dets[key][i, 2]),
+                                        int(dets[key][i, 3]),
+                                    )
+                                )
         f.close()
 
 
