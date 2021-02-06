@@ -7,7 +7,7 @@ import random
 import numpy as np
 from PIL import Image
 import matplotlib.pyplot as plt
-import matplotlib.pyplot as patches
+import matplotlib.patches as patches
 
 from utils.utils import change_box_order
 from augmentations.transforms import Denormalize, get_resize_augmentation
