@@ -3,8 +3,8 @@ settings:
   train_imgs: images/train
   val_imgs: images/train
   test_imgs: images/test
-  train_anns: annotations/wbf512_ratio_fold0_train.json
-  val_anns: annotations/wbf512_ratio_fold0_val.json
+  train_anns: annotations/wbf512_ratio_fold1_val.json
+  val_anns: annotations/wbf512_ratio_fold1_val.json
 
 
   # this is coco anchors, change it if necessary
@@ -28,7 +28,7 @@ settings:
     'Pleural effusion',
     'Pleural thickening',
     'Pneumothorax',
-    'Pulmonary fibrosis',
+    'Pulmonary fibrosis'
   ]
 
   # custom augmentations
@@ -36,5 +36,5 @@ settings:
   image_size: [512,512]
   keep_ratio: True
 
-  cutmix: True
+  cutmix: False
   mixup: False
