@@ -3,8 +3,8 @@ settings:
   train_imgs: images/train
   val_imgs: images/train
   test_imgs: images/test
-  train_anns: annotations/wbf512_ratio_fold1_val.json
-  val_anns: annotations/wbf512_ratio_fold1_val.json
+  train_anns: annotations/wbf512_ratio_fold2_train.json
+  val_anns: annotations/wbf512_ratio_fold2_val.json
 
 
   # this is coco anchors, change it if necessary
@@ -34,7 +34,7 @@ settings:
   # custom augmentations
   
   image_size: [512,512]
-  keep_ratio: True
+  keep_ratio: False
 
   cutmix: False
   mixup: False
