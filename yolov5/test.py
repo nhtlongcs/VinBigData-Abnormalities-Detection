@@ -260,6 +260,7 @@ def test(data,
             eval = COCOeval(anno, pred, 'bbox')
             if is_coco:
                 eval.params.imgIds = [int(Path(x).stem) for x in dataloader.dataset.img_files]  # image IDs to evaluate
+                eval.params.iouThrs = np.array([0.4])
             eval.evaluate()
             eval.accumulate()
             eval.summarize()
