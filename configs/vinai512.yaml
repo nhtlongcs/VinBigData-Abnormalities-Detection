@@ -1,10 +1,10 @@
 settings:
-  project_name: "vinai512-original"  # also the folder name of the dataset that under datasets folder
+  project_name: "vinai512"  # also the folder name of the dataset that under datasets folder
   train_imgs: images/train
   val_imgs: images/train
   test_imgs: images/test
-  train_anns: annotations/wbf512_ratio_fold2_train.json
-  val_anns: annotations/wbf512_ratio_fold2_val.json
+  train_anns: annotations/wbf512_noratio_fold3_train.json
+  val_anns: annotations/wbf512_noratio_fold3_val.json
 
 
   # this is coco anchors, change it if necessary
