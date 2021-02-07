@@ -96,6 +96,7 @@ class CocoDataset(Dataset):
 
         if self.transforms:
             item = self.transforms(image=image, bboxes=boxes, class_labels=labels)
+            # Normalize
             image = item['image']
             boxes = item['bboxes']
             labels = item['class_labels']
@@ -136,36 +137,12 @@ class CocoDataset(Dataset):
             'img_ids': img_ids,
             'img_names': img_names}
 
-    def collate_fn_frcnn(self, batch):
-        imgs = torch.stack([s['img'] for s in batch])   
-        img_ids = [s['img_id'] for s in batch]
-        img_names = [s['img_name'] for s in batch]
-
-        if self.inference:
-             return {'imgs': imgs, 'img_ids': img_ids}
-
-        annots = [torch.cat([s['box'] , s['label'].unsqueeze(1)], dim=1) for s in batch]
-        max_num_annots = max(annot.shape[0] for annot in annots)
-        if max_num_annots > 0:
-            annot_padded = torch.ones((len(annots), max_num_annots, 5)) * -1
-            for idx, annot in enumerate(annots):
-                if annot.shape[0] > 0:
-                    annot_padded[idx, :annot.shape[0], :] = annot
-        else:
-            annot_padded = torch.ones((len(annots), 1, 5)) * -1
-        return {
-            'imgs': imgs, 
-            'labels': annot_padded, 
-            'img_ids': img_ids,
-            'img_names': img_names}
-
     def load_image(self, image_index):
         image_info = self.coco.loadImgs(self.image_ids[image_index])[0]
         path = os.path.join(self.root_dir, image_info['file_name'])
         
         image = cv2.imread(path)
-        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB).astype(np.float32)
-        image /= 255.0
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         return image, image_info['file_name']
 
     def load_annotations(self, image_index):
