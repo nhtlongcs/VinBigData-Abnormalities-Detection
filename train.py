@@ -132,7 +132,7 @@ def train(args, config):
     print("---------VALSET INFO----------------")
     print(valset)
     print(trainer)
-    trainer.fit(start_epoch = start_epoch, start_iter = start_iter, num_epochs=args.num_epochs, print_per_iter=10)
+    trainer.fit(start_epoch = start_epoch, start_iter = start_iter, num_epochs=args.num_epochs, print_per_iter=100)
 
  
 
