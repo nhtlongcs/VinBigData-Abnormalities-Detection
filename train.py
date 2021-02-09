@@ -103,7 +103,7 @@ def train(args, config):
             criterion= FocalLoss(), 
             metrics=metric,
             optimizer= torch.optim.AdamW,
-            optim_params = {'lr': args.lr},     
+            optim_params = {'lr': args.lr, 'weight_decay':0.0005},     
             device = device)
 
     if args.resume is not None:                

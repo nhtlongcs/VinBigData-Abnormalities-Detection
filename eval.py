@@ -172,7 +172,7 @@ def main(args, config):
                             pred_str = '14 1 0 0 1 1'
                 
                         results.append([img_id, pred_str])
-                pbar.update(BATCH_SIZE)
+                pbar.update(1)
                 pbar.set_description(f'Empty images: {empty_imgs}')
 
         if args.submission:
