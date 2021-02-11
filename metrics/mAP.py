@@ -5,8 +5,8 @@ TP:         True prediction
 FP:         Predict object, but non exists  (Duplicate BBs are considered as FP)
 FN:         No predict, but there is object (When there are no detection on gt BB, or when wrong classification)
 
-Precision:  TP/(TP+FP)
-Recall:     TP/(TP+FN)
+Precision:  TP/(TP+FP) (a high precision implies that most detected objects match ground truth objects)
+Recall:     TP/(TP+FN) (a high recall score means that most ground truth objects were detected)
 
 AP:         area under Precision/Recall Curve, caclculated by integration
 mAP:        the mean of APs from all the object classes
