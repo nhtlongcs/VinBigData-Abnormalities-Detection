@@ -344,7 +344,7 @@ def train(hyp, opt, device, tb_writer=None, wandb=None):
                                                  single_cls=opt.single_cls,
                                                  dataloader=testloader,
                                                  save_dir=save_dir,
-                                                 verbose=nc < 50 and final_epoch,
+                                                 verbose=True,
                                                  plots=plots and final_epoch,
                                                  log_imgs=opt.log_imgs if wandb else 0,
                                                  compute_loss=compute_loss)
@@ -466,7 +466,7 @@ if __name__ == '__main__':
     parser.add_argument('--quad', action='store_true', help='quad dataloader')
     parser.add_argument('--save-dir',default='', help='save model path')
     opt = parser.parse_args()
-
+    print(opt)
     # Set DDP variables
     opt.world_size = int(os.environ['WORLD_SIZE']) if 'WORLD_SIZE' in os.environ else 1
     opt.global_rank = int(os.environ['RANK']) if 'RANK' in os.environ else -1
@@ -489,7 +489,8 @@ if __name__ == '__main__':
         opt.data, opt.cfg, opt.hyp = check_file(opt.data), check_file(opt.cfg), check_file(opt.hyp)  # check files
         assert len(opt.cfg) or len(opt.weights), 'either --cfg or --weights must be specified'
         opt.img_size.extend([opt.img_size[-1]] * (2 - len(opt.img_size)))  # extend to 2 sizes (train, test)
-        opt.name = 'evolve' if opt.evolve else opt.name
+        opt.name = f'{opt.name}/evolve' if opt.evolve else opt.name
+        # opt.name = 'evolve' if opt.evolve else opt.name
         if opt.save_dir == '':
             opt.save_dir = Path(opt.project)
         opt.save_dir = increment_path(Path(opt.save_dir) / opt.name, exist_ok=opt.exist_ok | opt.evolve)  # increment run
@@ -508,7 +509,7 @@ if __name__ == '__main__':
     # Hyperparameters
     with open(opt.hyp) as f:
         hyp = yaml.load(f, Loader=yaml.SafeLoader)  # load hyps
-
+    import pdb; pdb.set_trace()
     # Train
     logger.info(opt)
     try:
