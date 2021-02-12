@@ -509,7 +509,6 @@ if __name__ == '__main__':
     # Hyperparameters
     with open(opt.hyp) as f:
         hyp = yaml.load(f, Loader=yaml.SafeLoader)  # load hyps
-    import pdb; pdb.set_trace()
     # Train
     logger.info(opt)
     try:
