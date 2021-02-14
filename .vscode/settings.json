@@ -1,0 +1,4 @@
+{
+    "python.formatting.provider": "black",
+    "python.pythonPath": "/home/nhtlong/miniconda3/envs/pytorch/bin/python"
+}
