@@ -38,7 +38,7 @@ def main(args):
         
     else:
         # If is a folder
-        num_folds = int(len(os.listdir(args.csv_in))/2)
+        num_folds = int(len(os.listdir(args.csv_in))/2) # number of file divides two
 
         for fold in range(num_folds):
             print(f'Converting fold {fold}:')
