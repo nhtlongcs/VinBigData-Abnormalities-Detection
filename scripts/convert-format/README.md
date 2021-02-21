@@ -11,3 +11,4 @@ python convert.py --csv_in=train.csv --format=coco
     - ***--resize****:         resize boxes to fit image size (for COCO only)     
     - ***--keep_ratio***:      whether to keep the original aspect ratio (for COCO only)
     - ***--output_path***:     output path to store annotations
+    - ***--ignored***:         list of ignored class indexes. Example: '[14, 15]'
