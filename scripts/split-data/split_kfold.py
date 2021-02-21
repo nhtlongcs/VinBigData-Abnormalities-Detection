@@ -18,6 +18,7 @@ parser.add_argument('--seed',
                     help='random seed (default: 3698)')
 parser.add_argument('--csv',
                     type=str,
+                    default='../data/train.csv',
                     help='path to csv file')
 parser.add_argument('--k', 
                     type=int,
@@ -25,6 +26,7 @@ parser.add_argument('--k',
                     help='number of folds (default: 5)')
 parser.add_argument('--out',
                     type=str,
+                    default='../data/train_fold.csv',
                     help='output filename and directory')
 args = parser.parse_args()
 
