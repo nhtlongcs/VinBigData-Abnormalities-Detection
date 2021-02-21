@@ -1,10 +1,10 @@
 settings:
-  project_name: "vinai512"  # also the folder name of the dataset that under datasets folder
+  project_name: "vinai1024-noratio"  # also the folder name of the dataset that under datasets folder
   train_imgs: images/train
   val_imgs: images/train
   test_imgs: images/test
-  train_anns: annotations/wbf512_noratio_fold3_train.json
-  val_anns: annotations/wbf512_noratio_fold3_val.json
+  train_anns: annotations/1024_noratio_fold0_train.json
+  val_anns: annotations/1024_noratio_fold0_val.json
 
 
   # this is coco anchors, change it if necessary
@@ -15,6 +15,7 @@ settings:
   # category_id is one_indexed,
   # for example, index of 'car' here is 1, while category_id of is 2
   obj_list: [
+    'No Finding',
     'Aortic enlargement', 
     'Atelectasis', 
     'Calcification',
@@ -33,8 +34,8 @@ settings:
 
   # custom augmentations
   
-  image_size: [512,512]
+  image_size: [1024,1024]
   keep_ratio: False
 
-  cutmix: False
-  mixup: False
+  cutmix: True
+  mixup: True

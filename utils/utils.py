@@ -162,7 +162,7 @@ def change_box_order(boxes, order):
     :return: (tensor) converted bounding boxes, size [N, 4]
     """
 
-    assert order in ['xyxy2xywh', 'xywh2xyxy', 'xyxy2cxcy', 'cxcy2xyxy']
+    assert order in ['xyxy2xywh', 'xywh2xyxy', 'xyxy2cxcy', 'cxcy2xyxy', 'yxyx2xyxy', 'xyxy2yxyx']
 
     # Convert 1-d to a 2-d tensor of boxes, which first dim is 1
     if isinstance(boxes, torch.Tensor):
@@ -179,6 +179,9 @@ def change_box_order(boxes, order):
         elif order == 'cxcy2xyxy':
             return torch.cat([boxes[:, :2] - (boxes[:, 2:] *1.0 / 2),  # x_min, y_min
                             boxes[:, :2] + (boxes[:, 2:] *1.0 / 2)], 1)  # x_max, y_max
+        elif order == 'xyxy2yxyx' or order == 'yxyx2xyxy':
+            return boxes[:,[1,0,3,2]]
+        
     else:
         # Numpy
         new_boxes = boxes.copy()
@@ -306,6 +309,7 @@ def draw_boxes_v2(img_name, img, boxes, labels, scores, obj_list=None, figsize=(
 
     # Create a Rectangle patch
     for box, label, score in zip(boxes, labels, scores):
+        label = int(label)
         color = STANDARD_COLORS[label]
         x,y,w,h = box
         rect = patches.Rectangle((x,y),w,h,linewidth=1.5,edgecolor = color,facecolor='none')

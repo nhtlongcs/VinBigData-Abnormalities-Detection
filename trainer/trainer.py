@@ -183,10 +183,11 @@ class Trainer(nn.Module):
         self.model.eval()
         with torch.no_grad():
             batch = next(iter(self.valloader))
-            targets = batch['labels'].numpy()
+            targets = batch['targets']
+
             image_names = batch['img_names']
             imgs = batch['imgs']
-            outputs = self.model.inference_step(batch, threshold = 0.1, iou_threshold = 0.2)
+            outputs = self.model.inference_step(batch, conf_threshold = 0.1, iou_threshold = 0.2)
             for idx in range(len(outputs)):
                 img = imgs[idx]
                 image_name = image_names[idx]
@@ -198,11 +199,13 @@ class Trainer(nn.Module):
                 scores = pred['scores']
 
                 target = targets[idx]
-                target_boxes = target[:,:-1]
-                target_labels = target[:,-1]
+                target_boxes = target['boxes']
+                target_labels = target['labels']
                 
-                if len(boxes) == 0:
+                if len(boxes) == 0 or boxes is None:
                     continue
+                
+                target_boxes = change_box_order(target_boxes, 'yxyx2xyxy')
                 boxes = change_box_order(boxes, order='xyxy2xywh')
                 target_boxes = change_box_order(target_boxes, order='xyxy2xywh')
 

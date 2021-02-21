@@ -45,6 +45,12 @@ def load_checkpoint(model, path):
     :param path: (string) checkpoint path
     """
     state = torch.load(path)
+    current_lr = None
+    for param_group in model.optimizer.param_groups:
+        if 'lr' in param_group.keys():
+            current_lr = param_group['lr']
+            break
+
     try:
         model.model.load_state_dict(state["model"])
         model.optimizer.load_state_dict(state["optimizer"])
@@ -58,7 +64,11 @@ def load_checkpoint(model, path):
             ret = model.load_state_dict(state["model"])
         except RuntimeError as e:
             print(f'[Warning] Ignoring {e}')
-            
+
+    if current_lr is not None:
+        for param_group in model.optimizer.param_groups:
+            param_group['lr'] = current_lr
+        print(f'Set learning rate to {current_lr}')
     print("Loaded Successfully!")
 
 def get_epoch_iters(path):

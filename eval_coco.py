@@ -51,19 +51,23 @@ def main(args, config):
         retransforms = None)
 
     NUM_CLASSES = len(config.obj_list)
-    net = EfficientDetBackbone(num_classes=NUM_CLASSES, compound_coef=args.compound_coef,
-                                 ratios=eval(config.anchors_ratios), scales=eval(config.anchors_scales))
+
+    net = EfficientDetBackbone(
+        num_classes=NUM_CLASSES, 
+        compound_coef=args.compound_coef, 
+        load_weights=False, 
+        image_size=config.image_size)
+
     model = Detector(
                     n_classes=NUM_CLASSES,
                     model = net,
-                    criterion= FocalLoss(), 
-                    optimizer= torch.optim.Adam,
+                    optimizer= torch.optim.AdamW,
                     optim_params = {'lr': 0.1},     
                     device = device)
     model.eval()
 
     if args.weight is not None:                
-        load_checkpoint(net, args.weight)
+        load_checkpoint(model, args.weight)
     
     metric.update(model)
     metric.value()
@@ -76,7 +80,7 @@ if __name__ == '__main__':
     parser.add_argument('-c', '--compound_coef', type=int, default=0, help='coefficients of efficientdet')
     parser.add_argument('--max_images' , type=int, help='max number of images', default=10000)
     parser.add_argument('--weight' , type=str, help='project file that contains parameters')
-    parser.add_argument('--min_conf', type=float, default= 0.2, help='minimum confidence for an object to be detect')
+    parser.add_argument('--min_conf', type=float, default= 0.01, help='minimum confidence for an object to be detect')
     parser.add_argument('--min_iou', type=float, default = 0.15, help='minimum iou threshold for non max suppression')
 
     args = parser.parse_args()

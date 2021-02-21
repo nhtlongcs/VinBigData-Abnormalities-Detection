@@ -1,22 +1,3 @@
-'''
-COCO Mean Average Precision
-
-TP:         True prediction
-FP:         Predict object, but non exists  (Duplicate BBs are considered as FP)
-FN:         No predict, but there is object (When there are no detection on gt BB, or when wrong classification)
-
-Precision:  TP/(TP+FP) (a high precision implies that most detected objects match ground truth objects)
-Recall:     TP/(TP+FN) (a high recall score means that most ground truth objects were detected)
-
-AP:         area under Precision/Recall Curve, caclculated by integration
-mAP:        the mean of APs from all the object classes
-AP@[.5:.95] corresponds to the average AP for IoU from 0.5 to 0.95 with a step size of 0.05
-
-APsmall:    bbox area < 32x32px
-APmedium:   32x32px < bbox area < 96x96px
-APlarge:    bbox area > 92x92px
-'''
-
 import os
 import torch
 import json
@@ -129,7 +110,7 @@ class mAPScores(TemplateMetric):
                             box = bbox_xywh[i, :]
                             image_result = {
                                 'image_id': image_id,
-                                'category_id': label + 1,
+                                'category_id': label,
                                 'score': float(score),
                                 'bbox': box.tolist(),
                             }

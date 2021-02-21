@@ -69,21 +69,11 @@ def train(args, config):
 
     NUM_CLASSES = len(config.obj_list)
 
-    net = EfficientDetBackbone(num_classes=NUM_CLASSES, compound_coef=args.compound_coef,
-                                 ratios=eval(config.anchors_ratios), scales=eval(config.anchors_scales))
-    
-    # freeze backbone if train head_only
-    if args.head_only:
-        def freeze_backbone(m):
-            classname = m.__class__.__name__
-            for ntl in ['EfficientNet', 'BiFPN']:
-                if ntl in classname:
-                    for param in m.parameters():
-                        param.requires_grad = False
-
-        net.apply(freeze_backbone)
-        print('[Info] freezed backbone')
-
+    net = EfficientDetBackbone(
+        num_classes=NUM_CLASSES, 
+        compound_coef=args.compound_coef, 
+        load_weights=True, 
+        image_size=config.image_size)
 
     if args.saved_path is not None:
         args.saved_path = os.path.join(args.saved_path, args.config)
@@ -93,14 +83,13 @@ def train(args, config):
 
     metric = mAPScores(
         dataset=testset,
-        min_conf = 0.2,
+        min_conf = 0.01,
         min_iou = 0.15,
         retransforms = None)
 
     model = Detector(
             n_classes=NUM_CLASSES,
             model = net,
-            criterion= FocalLoss(), 
             metrics=metric,
             optimizer= torch.optim.AdamW,
             optim_params = {'lr': args.lr, 'weight_decay':0.0005},     
@@ -115,7 +104,7 @@ def train(args, config):
         start_epoch, start_iter = 0, 0
 
     # One cycle lr-scheduler. Source: https://github.com/ultralytics/yolov5
-    lf = one_cycle(1, 0.2, args.num_epochs)  # cosine 1->hyp['lrf']
+    lf = one_cycle(1, 0.158, args.num_epochs)  # cosine 1->hyp['lrf']
     scheduler = torch.optim.lr_scheduler.LambdaLR(model.optimizer, lr_lambda=lf)
 
     trainer = Trainer(model,
@@ -132,14 +121,14 @@ def train(args, config):
     print("---------VALSET INFO----------------")
     print(valset)
     print(trainer)
-    trainer.fit(start_epoch = start_epoch, start_iter = start_iter, num_epochs=args.num_epochs, print_per_iter=100)
+    trainer.fit(start_epoch = start_epoch, start_iter = start_iter, num_epochs=args.num_epochs, print_per_iter=300)
 
  
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser('Training EfficientDet')
     parser.add_argument('--config' , type=str, help='project file that contains parameters')
-    parser.add_argument('-c', '--compound_coef', type=int, default=0, help='coefficients of efficientdet')
+    parser.add_argument('-c', '--compound_coef', type=str, default='0', help='coefficients of efficientdet')
     parser.add_argument('-n', '--num_workers', type=int, default=4, help='num_workers of dataloader')
     parser.add_argument('--batch_size', type=int, default=4, help='The number of images per batch among all devices')
     parser.add_argument('--head_only', action='store_true', default = False,

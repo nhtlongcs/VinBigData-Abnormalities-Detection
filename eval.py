@@ -67,7 +67,8 @@ class TestDataset(Dataset):
         image_ori_hs = [s['image_ori_h'] for s in batch]
         image_ws = [s['image_w'] for s in batch]
         image_hs = [s['image_h'] for s in batch]
-
+        img_scales = torch.tensor([1.0]*len(batch), dtype=torch.float)
+        img_sizes = torch.tensor([imgs[0].shape[-2:]]*len(batch), dtype=torch.float)
         return {
             'imgs': imgs,
             'ori_imgs': ori_imgs,
@@ -75,7 +76,9 @@ class TestDataset(Dataset):
             'image_ori_ws': image_ori_ws,
             'image_ori_hs': image_ori_hs,
             'image_ws': image_ws,
-            'image_hs': image_hs
+            'image_hs': image_hs,
+            'img_sizes': img_sizes, 
+            'img_scales': img_scales
         }
 
     def __len__(self):
@@ -104,14 +107,17 @@ def main(args, config):
     testloader = DataLoader(testset, batch_size = BATCH_SIZE, collate_fn=testset.collate_fn)
     idx_classes = {idx:i for idx,i in enumerate(config.obj_list)}
     NUM_CLASSES = len(config.obj_list)
-    net = EfficientDetBackbone(num_classes=NUM_CLASSES, compound_coef=args.c,
-                                 ratios=eval(config.anchors_ratios), scales=eval(config.anchors_scales))
+
+    net = EfficientDetBackbone(
+        num_classes=NUM_CLASSES, 
+        compound_coef=args.c, 
+        load_weights=False, 
+        image_size=config.image_size)
 
     model = Detector(
                     n_classes=NUM_CLASSES,
                     model = net,
-                    criterion= FocalLoss(), 
-                    optimizer= torch.optim.Adam,
+                    optimizer= torch.optim.AdamW,
                     optim_params = {'lr': 0.1},     
                     device = device)
     model.eval()
@@ -153,7 +159,7 @@ def main(args, config):
                             pred_strs = []
                             for box, score, cls_id in zip(boxes, scores, labels):
                                 x,y,w,h = box
-                                
+                                cls_id = int(cls_id) - 1
                                 if config.keep_ratio:
                                     # Subtract left padding of image
                                     if img_w > img_h:
