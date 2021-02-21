@@ -9,10 +9,23 @@ import argparse
 import pandas as pd
 
 # Arguments parser
-parser = argparse.ArgumentParser()
-parser.add_argument('--seed', default=3698, type=int)
-parser.add_argument('--csv', default='data/train.csv', type=str)
-parser.add_argument('--k', default=5, type=int)
+parser = argparse.ArgumentParser(
+    description='Split a given data (in CSV format) into folds, add a column to indicate the fold each sample belongs to.'
+)
+parser.add_argument('--seed', 
+                    type=int, 
+                    default=3698,
+                    help='random seed (default: 3698)')
+parser.add_argument('--csv',
+                    type=str,
+                    help='path to csv file')
+parser.add_argument('--k', 
+                    type=int,
+                    default=5,
+                    help='number of folds (default: 5)')
+parser.add_argument('--out',
+                    type=str,
+                    help='output filename and directory')
 args = parser.parse_args()
 
 # Set randomization seed
@@ -23,13 +36,15 @@ df = pd.read_csv(args.csv)
 
 # Get appearing classes for each image
 data = dict()
-for image_id, _,class_id, *_ in df.values.tolist():
+df_obj_class = df[['image_id', 'class_id']]
+for image_id, class_id in df_obj_class.values:
     data.setdefault(image_id, [])
     data[image_id].append(class_id)
 data = [[k, v] for k, v in data.items()]
 
 # Transform into numpy arrays
-X, y = map(np.array, zip(*data))
+X, y = zip(*data)
+X = np.array(X)
 
 # Get unique classes
 original_tokens = sum(y, [])
@@ -41,28 +56,19 @@ mlb = MultiLabelBinarizer(classes=unique_tokens)
 y_bin = mlb.fit_transform(y)
 
 # k-fold split
-df['fold'] = np.nan
-
-cnt_df = pd.DataFrame()
-cnt_df['class_id'] = original_cnt.keys()
-cnt_df['total'] = original_cnt.values()
-cnt_df = cnt_df.sort_values(by='class_id')
-
 X_indices = np.array(range(len(X))).reshape(-1, 1)
 k_fold = IterativeStratification(n_splits=args.k, order=1)
+k_fold_split = k_fold.split(X_indices, y_bin)
 
-for i, (train_indices, test_indices) in enumerate(k_fold.split(X_indices, y_bin)):
-    # Get train-val splits
-    X_train = X[train_indices]
-    y_train = y[train_indices]
+# Assign fold to each id
+id2fold = dict()
+for i, (_, val_indices) in enumerate(k_fold_split):
+    for x in X[val_indices]:
+        id2fold[x] = i
 
-    X_test = X[test_indices]
-    y_test = y[test_indices]
-
-    # Assign fold
-    for x in X_test:
-        df['fold'][df['image_id'] == x] = i
-    cnt_df[f'fold_{i}'] = df.groupby('fold')['class_id'].value_counts()[i].sort_index().values
+# Add new 'fold' column
+df['fold'] = [id2fold[im_id] for im_id in df['image_id']]
 df['fold'] = df['fold'].astype(int)
-df.to_csv('train_fold.csv', index=False)
-cnt_df.to_csv('train_fold_cnt.csv', index=False)
+
+# Save to csv
+df.to_csv(args.out, index=False)
