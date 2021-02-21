@@ -4,7 +4,7 @@
 - Use below command to merge overlapping boxes
 
 ```
-python merge.py --csv_in=train.csv 
+python merge.py --csv_in=train.csv --type=wbf
 ```
 - ***Parameters***:
     - ***--csv_in***:          path to csv file
