@@ -156,7 +156,6 @@ def main(args, config):
 
                     if args.submission:
                         if boxes is not None:
-                            pred_strs = []
                             for box, score, cls_id in zip(boxes, scores, labels):
                                 x,y,w,h = box
                                 cls_id = int(cls_id) - 1
@@ -167,22 +166,22 @@ def main(args, config):
                                     else:
                                         x -= (img_h-img_w)/2
 
-                                x = round(float(x*1.0*img_ori_ws/img_w))
-                                y = round(float(y*1.0*img_ori_hs/img_h))
-                                w = round(float(w*1.0*img_ori_ws/img_w))
-                                h = round(float(h*1.0*img_ori_hs/img_h))
+                                x = round(float(x*1.0/img_w))
+                                y = round(float(y*1.0/img_h))
+                                w = round(float(w*1.0/img_w))
+                                h = round(float(h*1.0/img_h))
                                 score = np.round(float(score),2)
-                                pred_strs.append(f'{cls_id} {score} {x} {y} {x+w} {y+h}')
-                            pred_str = ' '.join(pred_strs)
+                                results.append([img_id, cls_id, score, x, y, x+w, y+h])
                         else:
-                            pred_str = '14 1 0 0 1 1'
+                            results.append([img_id, 14, 1.0, 0, 0, 1, 1])
+
                 
-                        results.append([img_id, pred_str])
+                        
                 pbar.update(1)
                 pbar.set_description(f'Empty images: {empty_imgs}')
 
         if args.submission:
-            submission_df = pd.DataFrame(results, columns=['image_id', 'PredictionString'])
+            submission_df = pd.DataFrame(results, columns=['image_id', 'class_id', 'score', 'x_min', 'y_min' , 'x_max', 'y_max'])
             submission_df.to_csv('results/submission.csv', index=False)
 
 
