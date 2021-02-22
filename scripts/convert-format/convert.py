@@ -7,7 +7,7 @@ from commons import *
 
 # Arguments parser
 parser = argparse.ArgumentParser()
-parser.add_argument('--csv_in', default='./folds', type=str,
+parser.add_argument('--csv_in', default='../data/folds', type=str,
                         help='input .csv file or folder to k-folds .csv files')
 parser.add_argument('--format', default='coco', type=str,
                         help ='convert to coco/yolo format')
@@ -15,8 +15,10 @@ parser.add_argument('--resize', default=512 , type=int,
                         help='resize boxes to fit image size (for COCO only)')
 parser.add_argument('--keep_ratio', action='store_true', 
                         help = 'whether to keep the original aspect ratio (for COCO only)')               
-parser.add_argument('--output_path', default='./annotations', type=str,
+parser.add_argument('--output_path', default='../data/annotations', type=str,
                         help = 'output path to store annotations')
+parser.add_argument('--ignored', default='[14]', type=str,
+                        help='list of ignored indexes')
 args = parser.parse_args()
 
 def main(args):
@@ -30,15 +32,16 @@ def main(args):
         
         if args.format == 'coco':
             dataset = CocoDataset(df.copy(), img_size=args.resize, keep_ratio=args.keep_ratio)
+            dataset.ignore_classes = eval(args.ignored)
             args.output_path = os.path.join(args.output_path, args.csv_in[:-4]+'_coco.json')
             dataset.write_all_annotations(save_filename=args.output_path)
         elif args.format == 'yolo':
             dataset = YoloDataset(df.copy())
+            dataset.ignore_classes = eval(args.ignored)
             dataset.write_all_annotations(save_dir=args.output_path)
-        
     else:
         # If is a folder
-        num_folds = int(len(os.listdir(args.csv_in))/2)
+        num_folds = int(len(os.listdir(args.csv_in))/2) # number of file divides two
 
         for fold in range(num_folds):
             print(f'Converting fold {fold}:')
@@ -48,13 +51,15 @@ def main(args):
             
                 if args.format == 'yolo':
                     dataset = YoloDataset(df.copy())
+                    dataset.ignore_classes = eval(args.ignored)
+
                     dataset.write_all_annotations(
                             save_dir=os.path.join(args.output_path,f'yolo/{fold}/{i}'),
                         )
 
                 elif args.format =='coco':
                     dataset = CocoDataset(df.copy(), img_size=args.resize, keep_ratio=args.keep_ratio)
-
+                    dataset.ignore_classes = eval(args.ignored)
                     dataset.write_all_annotations(
                             save_filename=os.path.join(args.output_path,f'coco/{fold}_{i}.json'),
                         )

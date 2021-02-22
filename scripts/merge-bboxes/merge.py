@@ -15,15 +15,17 @@ parser.add_argument('--iou_threshold', default=0.5, type=float,
 parser.add_argument('--skip_threshold', default=0.0001 , type=float,
                         help='skip box whose confidence lower than threshold (for WBF)')
 
-parser.add_argument('--csv_in', type=str, help='path to input csv file')
+parser.add_argument('--csv_in', type=str, default='../data/train.csv', help='path to input csv file')
 parser.add_argument('--csv_out', default=None, type=str, help='path to output csv file')
 parser.add_argument('--type', default='wbf', type=str, help='box fusion method')
-parser.add_argument('--class_mapping', default='./class_mapping.csv', type=str, help='class name csv file')
+parser.add_argument('--class_mapping', default='../data/class_mapping.csv', type=str, help='class name csv file')
 parser.add_argument('--ignored_classes', default='[14]', type=str, help='string of list of ignored classes')
 
 args = parser.parse_args()
 
 def main(args):
+    
+    assert args.type in ['wbf', 'nms'], 'type should be "nms" or "wbf"'
     if args.csv_out is None:
         args.csv_out = args.csv_in[:-4] + '_' + args.type + '.csv'
     
