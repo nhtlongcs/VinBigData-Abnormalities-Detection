@@ -1,5 +1,6 @@
 import argparse
 import pandas as pd
+import warnings
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--df',
@@ -8,7 +9,7 @@ parser.add_argument('--df',
                     help='path to model output csv file')
 parser.add_argument('--test_info',
                     type=str,
-                    default='test_info.csv',
+                    default='data/test_info.csv',
                     help='path to test info csv file')
 parser.add_argument('--filename',
                     type=str,
@@ -24,7 +25,7 @@ parser.add_argument('--keep_ratio',
                     help='Your output is keep ratio')
 args = vars(parser.parse_args())
 
-def to_submission(df='output.csv', test_info='test_info.csv', filename='submission.csv', trick=True, keep_ratio=False):
+def to_submission(df='output.csv', test_info='data/test_info.csv', filename='submission.csv', trick=True, keep_ratio=False):
     '''
     df: model output filename
     test_info: sample_submission file (to get image_id)
@@ -59,6 +60,9 @@ def to_submission(df='output.csv', test_info='test_info.csv', filename='submissi
             else:
                 x_min -= (h-w)/2
                 x_max -= (h-w)/2
+                
+            if ((x_min < 0) or (y_min < 0)):
+                warnings.warn("Check your keep_ratio flag!!!")
             
 
         d[df['image_id'][i]].append(" ".join(map(str, [int(df['class_id'][i]), df['score'][i], x_min, y_min, x_max, y_max] )))
