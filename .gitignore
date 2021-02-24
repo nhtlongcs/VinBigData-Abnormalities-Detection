@@ -159,3 +159,8 @@ fabric.properties
 
 # Local History for Visual Studio Code
 .history/
+/pre-trained-models/
+/models/
+/exported-models/
+/outputs/
+/data/

@@ -41,16 +41,22 @@ def to_submission(df='output.csv', test_info='test_info.csv', filename='submissi
     d = {i:[] for i in ss['image_id'].values.tolist()}
     sizemap = {i:(w,h) for i,w,h in zip(ss['image_id'].values.tolist(), ss['width'].values.tolist(), ss['height'].values.tolist())}
     trick_string = {i:'14 '+str(s)+' 0 0 1 1' for i,s in zip(ss['image_id'].values.tolist(), ss['class14prob'].values.tolist())}
-    
+
+    if df['class_id'].min() == 1:
+        sub_one = True
+        print("Subtracting one from class_ids")
+    else:
+        sub_one = False
+
     image_id = []
     PredictionString = []
     for i in range(len(df['image_id'].values.tolist())):
         w,h = sizemap[df['image_id'][i]]
 
-        x_min = round(float(df['x_min'][i])*w)
-        y_min = round(float(df['y_min'][i])*h)
-        x_max = round(float(df['x_max'][i])*w)
-        y_max = round(float(df['y_max'][i])*h)
+        x_min = float(df['x_min'][i]) * w
+        y_min = float(df['y_min'][i]) * h
+        x_max = float(df['x_max'][i]) * w
+        y_max = float(df['y_max'][i]) * h
 
         if (keep_ratio):
             if (w > h):
@@ -59,9 +65,19 @@ def to_submission(df='output.csv', test_info='test_info.csv', filename='submissi
             else:
                 x_min -= (h-w)/2
                 x_max -= (h-w)/2
-            
 
-        d[df['image_id'][i]].append(" ".join(map(str, [int(df['class_id'][i]), df['score'][i], x_min, y_min, x_max, y_max] )))
+        x_min, y_min, x_max, y_max = (round(x) for x in (x_min, y_min, x_max, y_max))
+        # print(x_min)
+        assert 0 <= x_min <= w
+        assert 0 <= x_max <= w
+        assert 0 <= y_min <= h
+        assert 0 <= y_max <= h
+
+        class_id = int(df['class_id'][i])
+        if sub_one:
+            class_id -= 1
+
+        d[df['image_id'][i]].append(" ".join(map(str, [class_id, round(df['score'][i], 3), x_min, y_min, x_max, y_max] )))
         
     for (k,v) in d.items():
         image_id.append(k)
