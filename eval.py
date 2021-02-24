@@ -166,10 +166,10 @@ def main(args, config):
                                     else:
                                         x -= (img_h-img_w)/2
 
-                                x = round(float(x*1.0/img_w))
-                                y = round(float(y*1.0/img_h))
-                                w = round(float(w*1.0/img_w))
-                                h = round(float(h*1.0/img_h))
+                                x = float(x*1.0/img_w)
+                                y = float(y*1.0/img_h)
+                                w = float(w*1.0/img_w)
+                                h = float(h*1.0/img_h)
                                 score = np.round(float(score),2)
                                 results.append([img_id, cls_id, score, x, y, x+w, y+h])
                         else:
@@ -182,7 +182,7 @@ def main(args, config):
 
         if args.submission:
             submission_df = pd.DataFrame(results, columns=['image_id', 'class_id', 'score', 'x_min', 'y_min' , 'x_max', 'y_max'])
-            submission_df.to_csv('results/submission.csv', index=False)
+            submission_df.to_csv('results/output.csv', index=False)
 
 
 if __name__ == '__main__':
