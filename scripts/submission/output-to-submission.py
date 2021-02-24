@@ -36,8 +36,9 @@ def to_submission(df, test_info, filename, round_to, use_trick, keep_ratio):
     df: model output filename
     test_info: sample_submission file (to get image_id)
     filename: output csv file name
-    trick: add class 14 to all images
-    keep_ratio: Your output is keep ratio
+    round_to: number of decimal places to round confidence values to
+    use_trick: add class 14 to all images
+    keep_ratio: undo central pad
     
     return a dataframe
     '''
