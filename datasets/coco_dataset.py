@@ -373,9 +373,7 @@ class CocoDataset(Dataset):
             
         plt.show()
 
-    def __str__(self):
-        s = "Custom Dataset for Object Detection\n"
-        line = "-------------------------------\n"
+    def __str__(self): 
         s1 = "Number of samples: " + str(len(self.coco.anns)) + '\n'
         s2 = "Number of classes: " + str(len(self.labels)) + '\n'
-        return s + line + s1 + s2
+        return s1 + s2

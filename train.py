@@ -35,13 +35,6 @@ def train(args, config):
         train = False,
         transforms=val_transforms)
 
-    print("##########   DATASET INFO   ##########")
-    print("Trainset: ")
-    print(trainset)
-    print("Valset: ")
-    print(valset)
-    print()
-
     trainloader = DataLoader(
         trainset, 
         batch_size=config.batch_size, 
@@ -109,11 +102,20 @@ def train(args, config):
                      scheduler = scheduler,
                      evaluate_per_epoch = args.val_interval,
                      visualize_when_val = args.no_visualization)
-
+    
+    print("##########   DATASET INFO   ##########")
+    print("Trainset: ")
+    print(trainset)
+    print("Valset: ")
+    print(valset)
+    print()
     print(trainer)
+    print()
+    print(config)
+    
     trainer.fit(start_epoch = start_epoch, start_iter = start_iter, num_epochs=config.num_epochs, print_per_iter=args.print_per_iter)
 
-    print(config)
+    
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser('Training EfficientDet')
@@ -130,7 +132,6 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
     config = Config(os.path.join('configs',args.config+'.yaml'))
-
 
     train(args, config)
     
