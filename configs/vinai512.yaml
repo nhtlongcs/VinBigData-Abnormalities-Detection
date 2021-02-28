@@ -29,7 +29,7 @@ settings:
 
   #################   TRAINING CONFIG   ###################
   
-  devices: 'cuda:0'                     # supports multi-gpu
+  devices: 'cuda:0'                     # supports multi-gpus
   num_epochs: 100
   batch_size: 4
   num_workers: 4

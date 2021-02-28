@@ -33,15 +33,15 @@ def get_lr_policy(opt_config):
     if opt_config["name"] == 'sgd':
         optimizer = SGD
         optimizer_params = {
-            'lr': opt_config.lr, 
-            'weight_decay': opt_config.weight_decay,
-            'momentum': opt_config.momentum,
+            'lr': opt_config['lr'], 
+            'weight_decay': opt_config['weight_decay'],
+            'momentum': opt_config['momentum'],
             'nesterov': True}
     elif opt_config["name"] == 'adam':
         optimizer = AdamW
         optimizer_params = {
-            'lr': opt_config.lr, 
-            'weight_decay': opt_config.weight_decay,
-            'betas': (opt_config.momentum, 0.999)}
+            'lr': opt_config['lr'], 
+            'weight_decay': opt_config['weight_decay'],
+            'betas': (opt_config['momentum'], 0.999)}
     
     return optimizer, optimizer_params
