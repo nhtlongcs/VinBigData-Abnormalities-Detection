@@ -113,7 +113,7 @@ def train(args, config):
     print(trainer)
     trainer.fit(start_epoch = start_epoch, start_iter = start_iter, num_epochs=config.num_epochs, print_per_iter=args.print_per_iter)
 
- 
+    print(config)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser('Training EfficientDet')

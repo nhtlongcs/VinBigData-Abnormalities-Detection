@@ -1,13 +1,5 @@
 import yaml
 
-def pretty(d, indent=0):
-   for key, value in d.items():
-      print('\t' * indent + str(key) + ':')
-      if isinstance(value, dict):
-         pretty(value, indent+1)
-      else:
-         print('\t' * (indent+1) + str(value))
-
 class Config():
     def __init__(self, yaml_path):
         yaml_file = open(yaml_path)
@@ -22,4 +14,13 @@ class Config():
     def __str__(self):
         print("##########   CONFIGURATION INFO   ##########")
         pretty(self._attr)
+        return '\n'
         
+def pretty(d, indent=0):
+  for key, value in d.items():
+    print('    ' * indent + str(key) + ':', end='')
+    if isinstance(value, dict):
+      print()
+      pretty(value, indent+1)
+    else:
+      print('\t' * (indent+1) + str(value))

@@ -270,11 +270,9 @@ class Trainer():
         s1 = "Model name: " + self.model.model_name
         s2 = f"Number of trainable parameters:  {self.model.trainable_parameters():,}"
        
-        s3 = "Loss function: " + str(self.criterion)[:-2]
-        s4 = "Optimizer: " + str(self.optimizer)
         s5 = "Training iterations per epoch: " + str(len(self.trainloader))
         s6 = "Validating iterations per epoch: " + str(len(self.valloader))
-        return "\n".join([s0,s1,s2,s3,s4,s5,s6])
+        return "\n".join([s0,s1,s2,s5,s6])
 
     def set_attribute(self, kwargs):
         self.checkpoint = None
