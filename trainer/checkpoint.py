@@ -25,7 +25,7 @@ class Checkpoint():
         :param model: Pytorch model with state dict
         """
         if not os.path.exists(self.path):
-            os.mkdir(self.path)
+            os.makedirs(self.path)
 
         model_path = "_".join([model.model_name,save_mode])
         

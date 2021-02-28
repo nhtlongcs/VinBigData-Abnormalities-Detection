@@ -130,7 +130,7 @@ class Trainer():
                 running_time = 0
 
             if (self.iters % self.checkpoint.save_per_iter == 0 or self.iters == self.num_iters - 1):
-                print(f'Save model at [{self.epoch} | {self.iters}] to last.pth')
+                print(f'Save model at [{self.epoch}|{self.iters}] to last.pth')
                 self.checkpoint.save(self.model, save_mode = 'last', epoch = self.epoch, iters = self.iters, best_value=self.best_value)
                 
 
@@ -268,6 +268,9 @@ class Trainer():
             self.use_amp = True
             self.model, self.optimizer = amp.initialize(self.model, self.optimizer, opt_level="O1", verbosity=0)
 
+    def set_dataparallel(self):
+        self.model = nn.DataParallel(self.model)
+
     def forward_test(self):
         self.model.eval()
         outputs = self.model.forward_test()
@@ -276,7 +279,7 @@ class Trainer():
     def __str__(self):
         s0 =  "##########   MODEL INFO   ##########"
         s1 = "Model name: " + self.model.model_name
-        s2 = f"Number of trainable parameters:  {self.model.trainable_parameters()}"
+        s2 = f"Number of trainable parameters:  {self.model.trainable_parameters():,}"
        
         s5 = "Training iterations per epoch: " + str(len(self.trainloader))
         s6 = "Validating iterations per epoch: " + str(len(self.valloader))
@@ -292,6 +295,7 @@ class Trainer():
         self.best_value = 0.0
         self.set_accumulate_step()
         self.set_amp()
+        self.set_dataparallel()
         for i,j in kwargs.items():
             setattr(self, i, j)
 

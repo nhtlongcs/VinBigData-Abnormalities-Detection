@@ -8,7 +8,6 @@ torch.backends.cudnn.fastest = True
 seed_everything()
 
 def train(args, config):
-    os.environ['CUDA_VISIBLE_DEVICES'] = config.devices
     device = torch.device(config.devices if torch.cuda.is_available() else 'cpu')
 
     train_transforms = get_augmentation(config, _type = 'train')
@@ -114,6 +113,8 @@ def train(args, config):
     print(trainer)
     print()
     print(config)
+    print(f"Start training at [{start_epoch}|{start_iter}]")
+    print(f"Current best MAP: {best_value}")
     
     trainer.fit(start_epoch = start_epoch, start_iter = start_iter, num_epochs=config.num_epochs, print_per_iter=args.print_per_iter)
 
