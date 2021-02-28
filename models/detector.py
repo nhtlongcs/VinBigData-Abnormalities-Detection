@@ -4,6 +4,7 @@ import torchvision.models as models
 import torch.nn as nn
 from tqdm import tqdm
 
+
 import sys
 sys.path.append('..')
 
@@ -11,6 +12,7 @@ class Detector(BaseModel):
     def __init__(self, model, n_classes, **kwargs):
         super(Detector, self).__init__(**kwargs)
         self.model = model
+        # self.model = nn.DataParallel(self.model)
         self.model_name = self.model.name
         if self.optimizer is not None:
             self.optimizer = self.optimizer(self.parameters(), lr= self.lr)

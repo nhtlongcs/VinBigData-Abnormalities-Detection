@@ -91,7 +91,7 @@ class Trainer():
             if loss.item() == 0 or not torch.isfinite(loss):
                 continue
             
-            if self.cfg.mixed_precision and apex_is_imported:
+            if self.use_amp:
                 with amp.scale_loss(loss, self.optimizer) as scaled_loss:
                     scaled_loss.backward()
             else:
@@ -256,7 +256,9 @@ class Trainer():
             self.accumulate_steps = max(round(self.cfg.total_accumulate_steps / self.cfg.batch_size), 1) 
 
     def set_amp(self):
+        self.use_amp = False
         if self.cfg.mixed_precision and apex_is_imported:
+            self.use_amp = True
             self.model, self.optimizer = amp.initialize(self.model, self.optimizer, opt_level="O1", verbosity=0)
 
 
