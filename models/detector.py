@@ -12,6 +12,7 @@ class Detector(BaseModel):
     def __init__(self, model, n_classes, **kwargs):
         super(Detector, self).__init__(**kwargs)
         self.model = model
+        self.set_dataparallel()
         self.model_name = self.model.name
         if self.optimizer is not None:
             self.optimizer = self.optimizer(self.parameters(), lr= self.lr)
@@ -87,3 +88,17 @@ class Detector(BaseModel):
             outputs = self(inputs)
         return outputs
 
+    def set_dataparallel(self):
+        self.model = CustomDataParallel(self.model)
+    
+    
+
+class CustomDataParallel(nn.DataParallel):
+    def __init__(self, model):
+        super(CustomDataParallel, self).__init__(module=model)
+    
+    def __getattr__(self, attr):
+        try:
+            return self._attr[attr]
+        except KeyError:
+            return self.module._attr[attr]
