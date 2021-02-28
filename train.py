@@ -83,11 +83,11 @@ def train(args, config):
 
     if args.resume is not None:                
         load_checkpoint(model, args.resume)
-        start_epoch, start_iter = get_epoch_iters(args.resume)
+        start_epoch, start_iter, best_value = get_epoch_iters(args.resume)
     else:
         print('Not resume. Initialize weights')
         init_weights(model.model)
-        start_epoch, start_iter = 0, 0
+        start_epoch, start_iter, best_value = 0, 0, 0.0
 
     # One cycle lr-scheduler. Source: https://github.com/ultralytics/yolov5
     lf = one_cycle(1, 0.158, config.num_epochs)  # cosine 1->hyp['lrf']
@@ -98,6 +98,7 @@ def train(args, config):
                      trainloader, 
                      valloader,
                      checkpoint = Checkpoint(save_per_iter=args.save_interval, path = args.saved_path),
+                     best_value=best_value,
                      logger = Logger(log_dir=args.log_path),
                      scheduler = scheduler,
                      evaluate_per_epoch = args.val_interval,

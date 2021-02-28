@@ -15,9 +15,11 @@ class Checkpoint():
         # Create folder
         if self.path is None:
             self.path = os.path.join('weights',datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
-        
+        else:
+            self.path = os.path.join(self.path,datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
 
-    def save(self, model, **kwargs):
+
+    def save(self, model, save_mode='last', **kwargs):
         """
         Save model and optimizer weights
         :param model: Pytorch model with state dict
@@ -25,15 +27,17 @@ class Checkpoint():
         if not os.path.exists(self.path):
             os.mkdir(self.path)
 
-        epoch = kwargs['epoch'] if 'epoch' in kwargs else '0'
-        iters = kwargs['iters'] if 'iters' in kwargs else '0'
-        model_path = "_".join([model.model_name,str(epoch), str(iters)])
-        if 'interrupted' in kwargs:
-            model_path +='_interrupted'
-            
+        model_path = "_".join([model.model_name,save_mode])
+        
+        epoch = int(kwargs['epoch']) if 'epoch' in kwargs else 0
+        iters = int(kwargs['iters']) if 'iters' in kwargs else 0
+        best_value = float(kwargs['best_value']) if 'best_value' in kwargs else 0
         weights = {
             'model': model.model.state_dict(),
             'optimizer': model.optimizer.state_dict(),
+            'epoch': epoch,
+            'iters': iters,
+            'best_value': best_value
         }
 
         torch.save(weights, os.path.join(self.path,model_path)+".pth")
@@ -72,16 +76,9 @@ def load_checkpoint(model, path):
     print("Loaded Successfully!")
 
 def get_epoch_iters(path):
-    path = os.path.basename(path)
-    tokens = path[:-4].split('_')
-    try:
-        if tokens[-1] == 'interrupted':
-            epoch_idx = int(tokens[-3])
-            iter_idx = int(tokens[-2])
-        else:
-            epoch_idx = int(tokens[-2])
-            iter_idx = int(tokens[-1])
-    except:
-        return 0, 0
+    state = torch.load(path)
+    epoch_idx = int(state['epoch']) if 'epoch' in state.keys() else 0
+    iter_idx = int(state['iters']) if 'iters' in state.keys() else 0
+    best_value = int(state['best_value']) if 'best_value' in state.keys() else 0
 
-    return epoch_idx, iter_idx
+    return epoch_idx, iter_idx, best_value

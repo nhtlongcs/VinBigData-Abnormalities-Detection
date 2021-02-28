@@ -70,7 +70,7 @@ class Trainer():
                 
 
             except KeyboardInterrupt:   
-                self.checkpoint.save(self.model, epoch = self.epoch, iters = self.iters, interrupted = True)
+                self.checkpoint.save(self.model, save_mode = 'last', epoch = self.epoch, iters = self.iters, best_value=self.best_value)
                 print("Stop training, checkpoint saved...")
                 break
 
@@ -130,7 +130,9 @@ class Trainer():
                 running_time = 0
 
             if (self.iters % self.checkpoint.save_per_iter == 0 or self.iters == self.num_iters - 1):
-                self.checkpoint.save(self.model, epoch = self.epoch, iters=self.iters)
+                print(f'Save model at [{self.epoch} | {self.iters}] to last.pth')
+                self.checkpoint.save(self.model, save_mode = 'last', epoch = self.epoch, iters = self.iters, best_value=self.best_value)
+                
 
     def inference_batch(self, testloader):
         self.model.eval()
@@ -191,6 +193,11 @@ class Trainer():
         log_dict = {"Validation Loss/Epoch" : epoch_loss['T'] / len(self.valloader),}
         log_dict.update(metric_dict)
         self.logging(log_dict)
+
+        # Save model gives best mAP score
+        if metric_dict['MAP'] > self.best_value:
+            self.best_value = metric_dict['MAP']
+            self.checkpoint.save(self.model, save_mode = 'best', epoch = self.epoch, iters = self.iters, best_value=self.best_value)
 
         if self.visualize_when_val:
             self.visualize_batch()
@@ -283,6 +290,7 @@ class Trainer():
         self.logger = None
         self.evaluate_per_epoch = 1
         self.visualize_when_val = True
+        self.best_value = 0.0
         self.set_accumulate_step()
         self.set_amp()
         for i,j in kwargs.items():
