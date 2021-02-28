@@ -135,8 +135,8 @@ def main(args, config):
                     ori_img = batch['ori_imgs'][idx]
                     img_w = batch['image_ws'][idx]
                     img_h = batch['image_hs'][idx]
-                    img_ori_ws = batch['image_ori_ws'][idx]
-                    img_ori_hs = batch['image_ori_hs'][idx]
+                    # img_ori_ws = batch['image_ori_ws'][idx]
+                    # img_ori_hs = batch['image_ori_hs'][idx]
                     
                     boxes = outputs['bboxes'] 
                     labels = outputs['classes']  
