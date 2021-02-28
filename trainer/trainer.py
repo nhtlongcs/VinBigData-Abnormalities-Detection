@@ -63,7 +63,7 @@ class Trainer():
           
                 if self.scheduler is not None:
                     self.scheduler.step()
-                    lr = [x['lr'] for x in optimizer.param_groups]
+                    lr = [x['lr'] for x in self.optimizer.param_groups]
                     lr_tags = ['Learning rate/lr0', 'Learning rate/lr1', 'Learning rate/lr2'] 
                     log_dict = {k:v for k,v in zip(lr_tags, lr)}
                     self.logging(log_dict)
@@ -101,7 +101,7 @@ class Trainer():
                 clip_gradient(self.optimizer, self.clip_grad)
 
             if self.use_accumulate:
-                if (i+1) % self.accumulate_steps == 0:
+                if (i+1) % self.accumulate_steps == 0 or i == len(self.trainloader)-1:
                     self.optimizer.step()
                     self.optimizer.zero_grad()
             else:
@@ -255,13 +255,18 @@ class Trainer():
             self.use_accumulate = True
             self.accumulate_steps = max(round(self.cfg.total_accumulate_steps / self.cfg.batch_size), 1) 
 
+    def set_amp(self):
+        if self.cfg.mixed_precision and apex_is_imported:
+            self.model, self.optimizer = amp.initialize(self.model, self.optimizer, opt_level="O1", verbosity=0)
+
+
     def forward_test(self):
         self.model.eval()
         outputs = self.model.forward_test()
         print("Feed forward success, outputs's shape: ", outputs.shape)
 
     def __str__(self):
-        s0 = "---------MODEL INFO----------------"
+        s0 =  "##########   MODEL INFO   ##########"
         s1 = "Model name: " + self.model.model_name
         s2 = f"Number of trainable parameters:  {self.model.trainable_parameters():,}"
        
@@ -279,7 +284,7 @@ class Trainer():
         self.evaluate_per_epoch = 1
         self.visualize_when_val = True
         self.set_accumulate_step()
-
+        self.set_amp()
         for i,j in kwargs.items():
             setattr(self, i, j)
 

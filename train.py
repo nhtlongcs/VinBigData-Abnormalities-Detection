@@ -2,29 +2,17 @@ from utils.getter import *
 import argparse
 import os
 
-import torch
-from torch import nn
-from torch.utils.data import DataLoader
-from utils.utils import init_weights, one_cycle
-
-import torchvision
-
 torch.backends.cudnn.benchmark = True
 torch.backends.cudnn.fastest = True
+seed_everything()
 
 def train(args, config):
-
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    if torch.cuda.is_available():
-        torch.cuda.manual_seed(42)
-    else:
-        torch.manual_seed(42)
+    
+    device = torch.device(config.devices if torch.cuda.is_available() else 'cpu')
 
     train_transforms = get_augmentation(config, _type = 'train')
     val_transforms = get_augmentation(config, _type = 'val')
     
-
-    #input_sizes = [512, 640, 768, 896, 1024, 1280, 1280, 1536, 1536]
     trainset = CocoDataset(
         config = config,
         root_dir = os.path.join('datasets', config.project_name, config.train_imgs),
@@ -39,8 +27,6 @@ def train(args, config):
         train=False,
         transforms=val_transforms)
     
-    
-
     testset = CocoDataset(
         config = config,
         root_dir=os.path.join('datasets', config.project_name, config.val_imgs), 
@@ -48,6 +34,13 @@ def train(args, config):
         inference = True,
         train = False,
         transforms=val_transforms)
+
+    print("##########   DATASET INFO   ##########")
+    print("Trainset: ")
+    print(trainset)
+    print("Valset: ")
+    print(valset)
+    print()
 
     trainloader = DataLoader(
         trainset, 
@@ -85,24 +78,26 @@ def train(args, config):
         min_iou = 0.15,
         retransforms = None)
 
+    optimizer, optimizer_params = get_lr_policy(config.lr_policy)
+
     model = Detector(
             n_classes=NUM_CLASSES,
             model = net,
             metrics=metric,
-            optimizer= torch.optim.AdamW,
-            optim_params = {'lr': args.lr, 'weight_decay':0.0005},     
+            optimizer= optimizer,
+            optim_params = optimizer_params,     
             device = device)
 
     if args.resume is not None:                
         load_checkpoint(model, args.resume)
         start_epoch, start_iter = get_epoch_iters(args.resume)
     else:
-        print('[Info] initialize weights')
+        print('Not resume. Initialize weights')
         init_weights(model.model)
         start_epoch, start_iter = 0, 0
 
     # One cycle lr-scheduler. Source: https://github.com/ultralytics/yolov5
-    lf = one_cycle(1, 0.158, args.num_epochs)  # cosine 1->hyp['lrf']
+    lf = one_cycle(1, 0.158, config.num_epochs)  # cosine 1->hyp['lrf']
     scheduler = torch.optim.lr_scheduler.LambdaLR(model.optimizer, lr_lambda=lf)
 
     trainer = Trainer(config,
@@ -115,12 +110,8 @@ def train(args, config):
                      evaluate_per_epoch = args.val_interval,
                      visualize_when_val = args.no_visualization)
 
-    print("---------TRAINSET INFO----------------")
-    print(trainset)
-    print("---------VALSET INFO----------------")
-    print(valset)
     print(trainer)
-    trainer.fit(start_epoch = start_epoch, start_iter = start_iter, num_epochs=args.num_epochs, print_per_iter=300)
+    trainer.fit(start_epoch = start_epoch, start_iter = start_iter, num_epochs=config.num_epochs, print_per_iter=args.print_per_iter)
 
  
 
@@ -128,8 +119,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser('Training EfficientDet')
     parser.add_argument('--config' , type=str, help='project file that contains parameters')
     parser.add_argument('-c', '--compound_coef', type=str, default='0', help='coefficients of efficientdet')
-    parser.add_argument('--lr', type=float, default=1e-3)
-    parser.add_argument('--num_epochs', type=int, default=100)
+    parser.add_argument('--print_per_iter', type=int, default=300, help='Number of iteration to print')
     parser.add_argument('--val_interval', type=int, default=1, help='Number of epoches between valing phases')
     parser.add_argument('--save_interval', type=int, default=1000, help='Number of steps between saving')
     parser.add_argument('--log_path', type=str, default='loggers/runs')

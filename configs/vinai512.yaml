@@ -29,15 +29,25 @@ settings:
 
   #################   TRAINING CONFIG   ###################
   
+  devices: 'cuda:0'                     # supports multi-gpu
+  num_epochs: 100
   batch_size: 4
   num_workers: 4
-  
-  image_size: [1024,1024]
+
+  image_size: [1024,1024]               # [512, 640, 768, 896, 1024, 1280, 1280, 1536, 1536]
   keep_ratio: False                     # whether to use resize padding
 
   cutmix: True
   mixup: True
 
+  # learning rate policy
+  lr_policy:
+    name: "sgd"                         #[adam|sgd]
+    lr: 0.01                            #[adam: 1e-3 | sgd: 1e-2]
+    momentum: 0.937
+    weight_decay: 0.0005
+
+
   # gradient accumulation
-  mixed_precision: False                # whether to use nvidia apex
-  total_accumulate_steps: 64            # step * batch_size
+  mixed_precision: True                # whether to use nvidia apex
+  total_accumulate_steps: 64            # step * batch_size, not use if equal 0
