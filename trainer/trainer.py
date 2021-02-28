@@ -268,6 +268,8 @@ class Trainer():
             self.use_amp = True
             self.model, self.optimizer = amp.initialize(self.model, self.optimizer, opt_level="O1", verbosity=0)
 
+    def set_dataparallel(self):
+        self.model =  nn.DataParallel(self.model)
 
     def forward_test(self):
         self.model.eval()
@@ -293,6 +295,7 @@ class Trainer():
         self.best_value = 0.0
         self.set_accumulate_step()
         self.set_amp()
+        self.set_dataparallel()
         for i,j in kwargs.items():
             setattr(self, i, j)
 
