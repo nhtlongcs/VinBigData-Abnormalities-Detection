@@ -203,8 +203,8 @@ class Trainer():
             self.visualize_batch()
         
     def visualize_batch(self):
-        if not os.path.exists('./sample'):
-            os.mkdir('./sample')
+        if not os.path.exists('./samples'):
+            os.mkdir('./samples')
 
         self.model.eval()
         with torch.no_grad():
@@ -217,7 +217,7 @@ class Trainer():
             for idx in range(len(outputs)):
                 img = imgs[idx]
                 image_name = image_names[idx]
-                image_outname = os.path.join('sample', f'{self.epoch}_{self.iters}_{idx}.jpg')
+                image_outname = os.path.join('samples', f'{self.epoch}_{self.iters}_{idx}.jpg')
 
                 pred = outputs[idx]
                 boxes = pred['bboxes']

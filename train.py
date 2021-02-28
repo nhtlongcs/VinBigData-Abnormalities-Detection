@@ -2,12 +2,13 @@ from utils.getter import *
 import argparse
 import os
 
+
 torch.backends.cudnn.benchmark = True
 torch.backends.cudnn.fastest = True
 seed_everything()
 
 def train(args, config):
-    
+    os.environ['CUDA_VISIBLE_DEVICES'] = config['devices']
     device = torch.device(config.devices if torch.cuda.is_available() else 'cpu')
 
     train_transforms = get_augmentation(config, _type = 'train')
