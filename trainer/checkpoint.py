@@ -79,6 +79,6 @@ def get_epoch_iters(path):
     state = torch.load(path)
     epoch_idx = int(state['epoch']) if 'epoch' in state.keys() else 0
     iter_idx = int(state['iters']) if 'iters' in state.keys() else 0
-    best_value = int(state['best_value']) if 'best_value' in state.keys() else 0
+    best_value = float(state['best_value']) if 'best_value' in state.keys() else 0.0
 
     return epoch_idx, iter_idx, best_value
