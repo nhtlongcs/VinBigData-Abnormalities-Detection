@@ -11,7 +11,7 @@ class Detector(BaseModel):
     def __init__(self, model, n_classes, **kwargs):
         super(Detector, self).__init__(**kwargs)
         self.model = model
-        self.model_name = "EfficientDet"
+        self.model_name = self.model.name
         if self.optimizer is not None:
             self.optimizer = self.optimizer(self.parameters(), lr= self.lr)
             self.set_optimizer_params()
