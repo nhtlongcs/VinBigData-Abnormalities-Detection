@@ -51,20 +51,18 @@ def train(args, config):
 
     trainloader = DataLoader(
         trainset, 
-        batch_size=args.batch_size, 
+        batch_size=config.batch_size, 
         shuffle = True, 
-        drop_last= True, 
         collate_fn=trainset.collate_fn, 
-        num_workers= args.num_workers, 
+        num_workers= config.num_workers, 
         pin_memory=True)
 
     valloader = DataLoader(
         valset, 
-        batch_size=args.batch_size, 
-        shuffle = False, 
-        drop_last= True, 
+        batch_size=config.batch_size, 
+        shuffle = False,
         collate_fn=valset.collate_fn, 
-        num_workers= args.num_workers, 
+        num_workers= config.num_workers, 
         pin_memory=True)
 
     NUM_CLASSES = len(config.obj_list)
@@ -107,7 +105,8 @@ def train(args, config):
     lf = one_cycle(1, 0.158, args.num_epochs)  # cosine 1->hyp['lrf']
     scheduler = torch.optim.lr_scheduler.LambdaLR(model.optimizer, lr_lambda=lf)
 
-    trainer = Trainer(model,
+    trainer = Trainer(config,
+                     model,
                      trainloader, 
                      valloader,
                      checkpoint = Checkpoint(save_per_iter=args.save_interval, path = args.saved_path),
@@ -129,11 +128,6 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser('Training EfficientDet')
     parser.add_argument('--config' , type=str, help='project file that contains parameters')
     parser.add_argument('-c', '--compound_coef', type=str, default='0', help='coefficients of efficientdet')
-    parser.add_argument('-n', '--num_workers', type=int, default=4, help='num_workers of dataloader')
-    parser.add_argument('--batch_size', type=int, default=4, help='The number of images per batch among all devices')
-    parser.add_argument('--head_only', action='store_true', default = False,
-                        help='whether finetunes only the regressor and the classifier, '
-                             'useful in early stage convergence or small/easy dataset')
     parser.add_argument('--lr', type=float, default=1e-3)
     parser.add_argument('--num_epochs', type=int, default=100)
     parser.add_argument('--val_interval', type=int, default=1, help='Number of epoches between valing phases')

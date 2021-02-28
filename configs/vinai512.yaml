@@ -1,21 +1,15 @@
 settings:
-  project_name: "vinai1024-noratio"  # also the folder name of the dataset that under datasets folder
+  #################   DATASET CONFIG   ###################
+
+  project_name: "vinai1024-noratio"    # also the folder name of the dataset that under ./datasets folder
   train_imgs: images/train
   val_imgs: images/train
   test_imgs: images/test
   train_anns: annotations/1024_noratio_fold0_train.json
   val_anns: annotations/1024_noratio_fold0_val.json
 
-
-  # this is coco anchors, change it if necessary
-  anchors_scales: '[2 ** 0, 2 ** (1.0 / 3.0), 2 ** (2.0 / 3.0)]'
-  anchors_ratios: '[(1.0, 1.0), (1.4, 0.7), (0.7, 1.4)]'
-
-  # must match your dataset's category_id.
-  # category_id is one_indexed,
-  # for example, index of 'car' here is 1, while category_id of is 2
   obj_list: [
-    'No Finding',
+    'No Finding',                       #Background
     'Aortic enlargement', 
     'Atelectasis', 
     'Calcification',
@@ -32,10 +26,18 @@ settings:
     'Pulmonary fibrosis'
   ]
 
-  # custom augmentations
+
+  #################   TRAINING CONFIG   ###################
+  
+  batch_size: 4
+  num_workers: 4
   
   image_size: [1024,1024]
-  keep_ratio: False
+  keep_ratio: False                     # whether to use resize padding
 
   cutmix: True
   mixup: True
+
+  # gradient accumulation
+  mixed_precision: False                # whether to use nvidia apex
+  total_accumulate_steps: 64            # step * batch_size

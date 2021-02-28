@@ -8,15 +8,21 @@ from loggers.loggers import Logger
 from utils.utils import clip_gradient
 import time
 from utils.utils import box_nms_numpy, change_box_order, draw_pred_gt_boxes
+try:
+    from apex import amp
+    apex_is_imported = True
+except ImportError:
+    apex_is_imported = False
 
-class Trainer(nn.Module):
-    def __init__(self, 
+class Trainer():
+    def __init__(self,
+                config,
                 model, 
                 trainloader, 
                 valloader,
                 **kwargs):
 
-        super(Trainer, self).__init__()
+        self.cfg = config
         self.model = model
         self.optimizer = model.optimizer
         self.criterion = model.criterion
@@ -57,6 +63,10 @@ class Trainer(nn.Module):
           
                 if self.scheduler is not None:
                     self.scheduler.step()
+                    lr = [x['lr'] for x in optimizer.param_groups]
+                    lr_tags = ['Learning rate/lr0', 'Learning rate/lr1', 'Learning rate/lr2'] 
+                    log_dict = {k:v for k,v in zip(lr_tags, lr)}
+                    self.logging(log_dict)
                 
 
             except KeyboardInterrupt:   
@@ -72,22 +82,31 @@ class Trainer(nn.Module):
         running_loss = {}
         running_time = 0
 
+        self.optimizer.zero_grad()
         for i, batch in enumerate(self.trainloader):
-            self.optimizer.zero_grad()
+            
             start_time = time.time()
             loss, loss_dict = self.model.training_step(batch)
 
-
             if loss.item() == 0 or not torch.isfinite(loss):
                 continue
-
-            loss.backward()
             
+            if self.cfg.mixed_precision and apex_is_imported:
+                with amp.scale_loss(loss, self.optimizer) as scaled_loss:
+                    scaled_loss.backward()
+            else:
+                loss.backward()
             
             if self.clip_grad is not None:
                 clip_gradient(self.optimizer, self.clip_grad)
 
-            self.optimizer.step()
+            if self.use_accumulate:
+                if (i+1) % self.accumulate_steps == 0:
+                    self.optimizer.step()
+                    self.optimizer.zero_grad()
+            else:
+                self.optimizer.step()
+                self.optimizer.zero_grad()
 
             end_time = time.time()
 
@@ -230,7 +249,11 @@ class Trainer(nn.Module):
         values = [l for l in logs.values()]
         self.logger.write(tags= tags, values= values)
 
-
+    def set_accumulate_step(self):
+        self.use_accumulate = False
+        if self.cfg.total_accumulate_steps > 0:
+            self.use_accumulate = True
+            self.accumulate_steps = max(round(self.cfg.total_accumulate_steps / self.cfg.batch_size), 1) 
 
     def forward_test(self):
         self.model.eval()
@@ -255,6 +278,7 @@ class Trainer(nn.Module):
         self.logger = None
         self.evaluate_per_epoch = 1
         self.visualize_when_val = True
+        self.set_accumulate_step()
 
         for i,j in kwargs.items():
             setattr(self, i, j)
