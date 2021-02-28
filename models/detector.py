@@ -13,7 +13,7 @@ class Detector(BaseModel):
         super(Detector, self).__init__(**kwargs)
         self.model = model
         self.set_dataparallel()
-        self.model_name = self.model.name
+        self.model_name = self.model.module.name
         if self.optimizer is not None:
             self.optimizer = self.optimizer(self.parameters(), lr= self.lr)
             self.set_optimizer_params()
@@ -91,14 +91,9 @@ class Detector(BaseModel):
     def set_dataparallel(self):
         self.model = CustomDataParallel(self.model)
     
-    
-
 class CustomDataParallel(nn.DataParallel):
     def __init__(self, model):
         super(CustomDataParallel, self).__init__(module=model)
     
-    def __getattr__(self, attr):
-        try:
-            return self._attr[attr]
-        except KeyError:
-            return self.module._attr[attr]
+    def detect(self, inputs, img_sizes, img_scales, conf_threshold=0.2):
+        return self.module.detect(inputs, img_sizes, img_scales, conf_threshold)

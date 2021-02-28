@@ -27,15 +27,6 @@ class EfficientDetBackbone(nn.Module):
     def forward(self, inputs, targets):
         return self.model(inputs, targets)
 
-    def init_backbone(self, path):
-        state_dict = torch.load(path)
-        try:
-            ret = self.model.load_state_dict(state_dict, strict=False)
-            print(ret)
-        except RuntimeError as e:
-            print('Ignoring ' + str(e) + '"')
-
-
     def detect(self, inputs, img_sizes, img_scales, conf_threshold=0.2):
         outputs = self.model.detect(inputs, img_sizes, img_scales)
         outputs = outputs.cpu().numpy()
