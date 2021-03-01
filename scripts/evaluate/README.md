@@ -7,7 +7,7 @@
 
 - Run below command to calculate mAP@0.4
 ```
-    python evaluate.py --gt_csv=0_val.json --pred_csv=0_predict.csv
+    python evaluate.py --gt_csv=0_val.csv --pred_csv=0_predict.csv
 ```
 - ***Parameters***:
     - ***--gt_csv***:          path to ground truth .csv

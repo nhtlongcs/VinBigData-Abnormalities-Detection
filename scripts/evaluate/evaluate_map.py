@@ -2,7 +2,7 @@
 COCO Mean Average Precision Evaluation
 Example execution:
 
-python evaluate.py --gt_csv=0_val.json --pred_csv=0_predict.csv
+python evaluate.py --gt_csv=0_val.csv --pred_csv=0_predict.csv
 """
 
 import os
@@ -51,7 +51,7 @@ def csv2json(gt_csv, pred_csv):
     }]
 
 
-    image_id,class_name,class_id,rad_id,x_min,y_min,x_max,y_max,width,height,fold
+    image_id,class_id,x_min,y_min,x_max,y_max,width,height
     image_id,class_id,x_min,y_min,x_max,y_max,score
     """
 
@@ -88,7 +88,6 @@ def csv2json(gt_csv, pred_csv):
             for row in zip(
                 database["image_id"],
                 database["class_id"],
-                database["rad_id"],
                 database["x_min"],
                 database["y_min"],
                 database["x_max"],
@@ -99,7 +98,7 @@ def csv2json(gt_csv, pred_csv):
         ]
 
         for row in annotations:
-            image_name, class_id, rad_id, xmin, ymin, xmax, ymax, width, height = row
+            image_name, class_id, xmin, ymin, xmax, ymax, width, height = row
 
             if image_name not in image_dict.keys():
                 image_dict[image_name] = img_count
@@ -122,7 +121,6 @@ def csv2json(gt_csv, pred_csv):
                 "bbox": [xmin, ymin, ann_w, ann_h],
                 "area": ann_w * ann_h,
                 "category_id": int(class_id) + 1,  # Coco starts from 1
-                "rad_id": str(rad_id),
                 "iscrowd": 0,
             }
             item_count += 1
