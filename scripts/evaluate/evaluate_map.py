@@ -10,6 +10,7 @@ import json
 import argparse
 import numpy as np
 import pandas as pd
+from tqdm import tqdm
 from pycocotools.coco import COCO
 from pycocotools.cocoeval import COCOeval
 
@@ -132,17 +133,21 @@ def csv2json(gt_csv, pred_csv):
             json.dump(my_dict, outfile)
         return save_filename, image_dict
 
-    def make_pred_file(df, image_dict, save_filename='./temp/pred.json'):
+    def make_pred_file(df, image_dict, tmp_df, save_filename='./temp/pred.json'):
         zipped = zip(df["image_id"], df["class_id"], df["x_min"], df["y_min"], df['x_max'], df["y_max"], df["score"])
         annotations = [row for row in zipped]
         results = []
-        for ann in annotations:
+        for ann in tqdm(annotations):
             image_id, class_id, xmin, ymin, xmax, ymax, score = ann
+            image_df = tmp_df.loc[tmp_df['image_id'] == image_id]
+            
+            width = int(image_df['width'].iloc[0])
+            height = int(image_df['height'].iloc[0])
 
             results.append({
                 "image_id": int(image_dict[image_id]), 
                 "category_id": class_id + 1, 
-                "bbox": [xmin, ymin, xmax-xmin, ymax-ymin], 
+                "bbox": [int(xmin*width), int(ymin*height), int((xmax-xmin)*width), int((ymax-ymin)*height)], 
                 "score": float(score)
                 })
         if os.path.isfile(save_filename):
@@ -152,6 +157,8 @@ def csv2json(gt_csv, pred_csv):
         return save_filename
 
     gt_df = pd.read_csv(gt_csv)
+    tmp_df = gt_df[['image_id', 'width', 'height']]
+
     pred_df = pd.read_csv(pred_csv)
     
 
@@ -167,7 +174,7 @@ def csv2json(gt_csv, pred_csv):
 
     # Make json file
     gt_json, image_dict = make_gt_file(gt_df)
-    pred_json = make_pred_file(pred_df, image_dict)
+    pred_json = make_pred_file(pred_df, image_dict, tmp_df)
 
     return gt_json, pred_json
 

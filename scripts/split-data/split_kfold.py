@@ -1,37 +1,33 @@
-import os
 from collections import Counter
 from sklearn.preprocessing import MultiLabelBinarizer
-from skmultilearn.model_selection import iterative_train_test_split
 from skmultilearn.model_selection import IterativeStratification
 import numpy as np
-import csv
 import argparse
 import pandas as pd
 
-# Arguments parser
-parser = argparse.ArgumentParser(
-    description='Split a given data (in CSV format) into folds, add a column to indicate the fold each sample belongs to.'
-)
-parser.add_argument('--seed', 
-                    type=int, 
-                    default=3698,
-                    help='random seed (default: 3698)')
-parser.add_argument('--csv',
-                    type=str,
-                    default='../data/train.csv',
-                    help='path to csv file')
-parser.add_argument('--k', 
-                    type=int,
-                    default=5,
-                    help='number of folds (default: 5)')
-parser.add_argument('--out',
-                    type=str,
-                    default='../data/train_fold.csv',
-                    help='output filename and directory')
-args = parser.parse_args()
 
-# Set randomization seed
-np.random.seed(args.seed)
+def parse_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--csv',
+                        type=str,
+                        help='path to csv file')
+    parser.add_argument('--out',
+                        type=str,
+                        default='../data/train_fold.csv',
+                        help='output filename and directory')
+    parser.add_argument('--k',
+                        type=int,
+                        default=5,
+                        help='number of folds (default: 5)')
+    parser.add_argument('--seed',
+                        type=int,
+                        default=3698,
+                        help='random seed (default: 3698)')
+    return parser.parse_args()
+
+
+# Parse arguments
+args = parse_args()
 
 # Read CSV
 df = pd.read_csv(args.csv)
@@ -50,12 +46,14 @@ X = np.array(X)
 
 # Get unique classes
 original_tokens = sum(y, [])
-original_cnt = dict(Counter(original_tokens))
 
 # Transform into binary vectors (1=class appears)
 unique_tokens = sorted(list(set(original_tokens)))
 mlb = MultiLabelBinarizer(classes=unique_tokens)
 y_bin = mlb.fit_transform(y)
+
+# Set random seed
+np.random.seed(args.seed)
 
 # k-fold split
 X_indices = np.array(range(len(X))).reshape(-1, 1)
