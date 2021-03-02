@@ -58,90 +58,6 @@ def one_hot_embedding(labels, num_classes):
     y = torch.eye(num_classes)  # [D,D]
     return y[labels]            # [N,D]
 
-
-def box_nms(boxes, scores, threshold=0.5):
-    """
-    Non Maximum Suppression
-    Use custom (very slow) or torchvision non-maximum supression on bounding boxes
-    
-    :param bboxes: (tensor) bounding boxes, size [N, 4]
-    :param scores: (tensor) bbox scores, sized [N]
-    :return: keep: (tensor) selected box's indices
-    """
-
-    # Torchvision NMS:
-    keep = torchvision.ops.boxes.nms(boxes, scores,threshold)
-    return keep
-
-def box_nms_numpy(bounding_boxes, confidence_score, labels, threshold=0.2, box_format='xyxy'):
-    """
-    Non Maximum Suppression
-    Use custom (very slow) or torchvision non-maximum supression on bounding boxes
-    
-    :param bboxes: (tensor) bounding boxes, size [N, 4]
-    :param scores: (tensor) bbox scores, sized [N]
-    :return: keep: (tensor) selected box's indices
-    """
-
-    # If no bounding boxes, return empty list
-    if len(bounding_boxes) == 0:
-        return [], []
-
-    # Bounding boxes
-    boxes = np.array(bounding_boxes)
-
-    # coordinates of bounding boxes
-    start_x = boxes[:, 0]
-    start_y = boxes[:, 1]
-    end_x = boxes[:, 2]
-    end_y = boxes[:, 3]
-
-    if box_format == 'xywh':
-        end_x += boxes[:, 0]
-        end_y += boxes[:, 1]
-    # Confidence scores of bounding boxes
-    score = np.array(confidence_score)
-
-    # Picked bounding boxes
-    picked_boxes = []
-    picked_score = []
-    picked_classes = []
-    
-    # Compute areas of bounding boxes
-    areas = (end_x - start_x + 1) * (end_y - start_y + 1)
-
-    # Sort by confidence score of bounding boxes
-    order = np.argsort(score)
-
-    # Iterate bounding boxes
-    while order.size > 0:
-        # The index of largest confidence score
-        index = order[-1]
-
-        # Pick the bounding box with largest confidence score
-        picked_boxes.append(bounding_boxes[index])
-        picked_score.append(confidence_score[index])
-        picked_classes.append(labels[index])
-        
-        # Compute ordinates of intersection-over-union(IOU)
-        x1 = np.maximum(start_x[index], start_x[order[:-1]])
-        x2 = np.minimum(end_x[index], end_x[order[:-1]])
-        y1 = np.maximum(start_y[index], start_y[order[:-1]])
-        y2 = np.minimum(end_y[index], end_y[order[:-1]])
-
-        # Compute areas of intersection-over-union
-        w = np.maximum(0.0, x2 - x1 + 1)
-        h = np.maximum(0.0, y2 - y1 + 1)
-        intersection = w * h
-
-        # Compute the ratio between intersection and union
-        ratio = intersection / (areas[index] + areas[order[:-1]] - intersection)
-
-        left = np.where(ratio < threshold)
-        order = order[left]
-
-    return np.array(picked_boxes), np.array(picked_score), np.array(picked_classes)
-
 def clip_gradient(optimizer, grad_clip):
     """
     Clips gradients computed during backpropagation to avoid explosion of gradients.
@@ -261,20 +177,6 @@ def variance_scaling_(tensor, gain=1.):
     std = math.sqrt(gain / float(fan_in))
 
     return _no_grad_normal_(tensor, 0., std)
-
-def postprocessing(outs, imgs, retransforms = None, out_format='xyxy'):
-    for item in outs:
-        
-        boxes_out = item['bboxes']
-        if len(boxes_out) == 0:
-            continue
-        boxes_out_xywh = change_box_order(boxes_out, order = 'xyxy2xywh')
-        new_boxes = retransforms(img = imgs, box=boxes_out_xywh)['box']
-        if out_format == 'xyxy':
-            new_boxes = change_box_order(new_boxes, order = 'xywh2xyxy')
-        item['bboxes'] = new_boxes
-
-    return outs
 
 def draw_boxes(img, preds, obj_list):
     bboxes = preds['bboxes']
