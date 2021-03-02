@@ -71,6 +71,7 @@ def new_focal_loss(logits, targets, alpha: float, gamma: float, normalizer, labe
     pred_prob = logits.sigmoid()
     targets = targets.to(logits.dtype)
     onem_targets = 1. - targets
+
     p_t = (targets * pred_prob) + (onem_targets * (1. - pred_prob))
     alpha_factor = targets * alpha + onem_targets * (1. - alpha)
     modulating_factor = (1. - p_t) ** gamma

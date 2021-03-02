@@ -23,12 +23,11 @@ class EfficientDetBackbone(nn.Module):
 
         self.model = DetBenchTrain(net, config)
 
-
     def forward(self, inputs, targets):
         return self.model(inputs, targets)
 
     def detect(self, inputs, img_sizes, img_scales, conf_threshold=0.2):
-        outputs = self.model.detect(inputs, img_sizes, img_scales)
+        outputs = self.model(inputs, inference=True, img_sizes=img_sizes, img_scales=img_scales)
         outputs = outputs.cpu().numpy()
         out = []
         for i, output in enumerate(outputs):
@@ -54,3 +53,4 @@ class EfficientDetBackbone(nn.Module):
                 })
 
         return out
+    

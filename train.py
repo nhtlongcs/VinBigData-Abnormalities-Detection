@@ -8,7 +8,10 @@ torch.backends.cudnn.fastest = True
 seed_everything()
 
 def train(args, config):
-    device = torch.device(config.devices if torch.cuda.is_available() else 'cpu')
+    os.environ['CUDA_VISIBLE_DEVICES'] = config.gpu_devices
+    num_gpus = len(config.gpu_devices.split(','))
+
+    device = torch.device("cuda" if torch.cuda.is_available() else 'cpu')
 
     train_transforms = get_augmentation(config, _type = 'train')
     val_transforms = get_augmentation(config, _type = 'val')
@@ -113,6 +116,7 @@ def train(args, config):
     print(trainer)
     print()
     print(config)
+    print(f'Training with {num_gpus} gpu(s)')
     print(f"Start training at [{start_epoch}|{start_iter}]")
     print(f"Current best MAP: {best_value}")
     

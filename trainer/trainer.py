@@ -8,11 +8,7 @@ from loggers.loggers import Logger
 from utils.utils import clip_gradient
 import time
 from utils.utils import box_nms_numpy, change_box_order, draw_pred_gt_boxes
-try:
-    from apex import amp
-    apex_is_imported = True
-except ImportError:
-    apex_is_imported = False
+from torch.cuda import amp
 
 class Trainer():
     def __init__(self,
@@ -86,15 +82,14 @@ class Trainer():
         for i, batch in enumerate(self.trainloader):
             
             start_time = time.time()
-            loss, loss_dict = self.model.training_step(batch)
-
-            if loss.item() == 0 or not torch.isfinite(loss):
-                continue
+            
             
             if self.use_amp:
-                with amp.scale_loss(loss, self.optimizer) as scaled_loss:
-                    scaled_loss.backward()
+                with amp.autocast():
+                    loss, loss_dict = self.model.training_step(batch)
+                    self.scaler.scale(loss).backward()
             else:
+                loss, loss_dict = self.model.training_step(batch)
                 loss.backward()
             
             if self.clip_grad is not None:
@@ -102,10 +97,18 @@ class Trainer():
 
             if self.use_accumulate:
                 if (i+1) % self.accumulate_steps == 0 or i == len(self.trainloader)-1:
-                    self.optimizer.step()
+                    if self.use_amp:
+                        self.scaler.step(self.optimizer)
+                        self.scaler.update()
+                    else:
+                        self.optimizer.step()
                     self.optimizer.zero_grad()
             else:
-                self.optimizer.step()
+                if self.use_amp:
+                    self.scaler.step(self.optimizer)
+                    self.scaler.update()
+                else:
+                    self.optimizer.step()
                 self.optimizer.zero_grad()
 
             end_time = time.time()
@@ -264,9 +267,9 @@ class Trainer():
 
     def set_amp(self):
         self.use_amp = False
-        if self.cfg.mixed_precision and apex_is_imported:
+        if self.cfg.mixed_precision:
             self.use_amp = True
-            self.model, self.optimizer = amp.initialize(self.model, self.optimizer, opt_level="O1", verbosity=0)
+            self.scaler = amp.GradScaler()
 
     def forward_test(self):
         self.model.eval()

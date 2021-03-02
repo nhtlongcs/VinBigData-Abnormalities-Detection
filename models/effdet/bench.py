@@ -119,34 +119,41 @@ class DetBenchTrain(nn.Module):
             self.anchor_labeler = AnchorLabeler(self.anchors, self.num_classes, match_threshold=0.5)
         self.loss_fn = DetectionLoss(model.config)
 
-    def forward(self, x, target: Dict[str, torch.Tensor]):
+        # Distributed model on multi-gpus
+        self.model = nn.DataParallel(self.model).cuda()
+        self.loss_fn = nn.DataParallel(self.loss_fn).cuda()
+
+    def forward(self, x, target=None, inference=False, img_sizes=None, img_scales=None):
         class_out, box_out = self.model(x)
-        if self.anchor_labeler is None:
-            # target should contain pre-computed anchor labels if labeler not present in bench
-            assert 'label_num_positives' in target
-            cls_targets = [target[f'label_cls_{l}'] for l in range(self.num_levels)]
-            box_targets = [target[f'label_bbox_{l}'] for l in range(self.num_levels)]
-            num_positives = target['label_num_positives']
+        if inference == False:
+            if self.anchor_labeler is None:
+                # target should contain pre-computed anchor labels if labeler not present in bench
+                assert 'label_num_positives' in target
+                cls_targets = [target[f'label_cls_{l}'] for l in range(self.num_levels)]
+                box_targets = [target[f'label_bbox_{l}'] for l in range(self.num_levels)]
+                num_positives = target['label_num_positives']
+            else:
+                cls_targets, box_targets, num_positives = self.anchor_labeler.batch_label_anchors(
+                    target['boxes'], target['labels'])
+            
+            loss, class_loss, box_loss = self.loss_fn(class_out, box_out, cls_targets, box_targets, num_positives)
+
+            loss = loss.mean()
+            class_loss = class_loss.mean()
+            box_loss = box_loss.mean()
+            
+            output = {'T': loss, 'C': class_loss, 'B': box_loss}
+            return output
         else:
-            cls_targets, box_targets, num_positives = self.anchor_labeler.batch_label_anchors(
-                target['boxes'], target['labels'])
-
-        loss, class_loss, box_loss = self.loss_fn(class_out, box_out, cls_targets, box_targets, num_positives)
-        output = {'T': loss, 'C': class_loss, 'B': box_loss}
-
-        return output
-
-    def detect(self, x, img_sizes, img_scales):
-        class_out, box_out = self.model(x)
-        # if eval mode, output detections for evaluation
-        class_out_pp, box_out_pp, indices, classes = _post_process(
-            class_out, box_out, num_levels=self.num_levels, num_classes=self.num_classes,
-            max_detection_points=self.max_detection_points)
-        detection = _batch_detection(
-            x.shape[0], class_out_pp, box_out_pp, self.anchors.boxes, indices, classes,
-            img_scales, img_sizes,
-            max_det_per_image=self.max_det_per_image, soft_nms=self.soft_nms)
-        return detection
+            class_out_pp, box_out_pp, indices, classes = _post_process(
+                class_out, box_out, num_levels=self.num_levels, num_classes=self.num_classes,
+                max_detection_points=self.max_detection_points)
+            detection = _batch_detection(
+                x.shape[0], class_out_pp, box_out_pp, self.anchors.boxes, indices, classes,
+                img_scales, img_sizes,
+                max_det_per_image=self.max_det_per_image, soft_nms=self.soft_nms)
+            return detection
+        
 
 
 def unwrap_bench(model):
