@@ -233,6 +233,12 @@ class Trainer():
                 labels = pred['classes']
                 scores = pred['scores']
 
+                indexes = np.where(scores > self.cfg.min_conf_val)[0]
+                    
+                boxes = boxes[indexes]
+                scores = scores[indexes]
+                classes = classes[indexes]
+
                 target = targets[idx]
                 target_boxes = target['boxes']
                 target_labels = target['labels']

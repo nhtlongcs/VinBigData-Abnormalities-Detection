@@ -85,11 +85,10 @@ class TestDataset(Dataset):
       return len(self.fns)
 
 def main(args, config):
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    if torch.cuda.is_available():
-        torch.cuda.manual_seed(42)
-    else:
-        torch.manual_seed(42)
+    os.environ['CUDA_VISIBLE_DEVICES'] = config.gpu_devices
+    num_gpus = len(config.gpu_devices.split(','))
+
+    device = torch.device("cuda" if torch.cuda.is_available() else 'cpu')
 
     if args.output_path is not None:
         if not os.path.exists(args.output_path):
@@ -107,6 +106,14 @@ def main(args, config):
     testloader = DataLoader(testset, batch_size = BATCH_SIZE, collate_fn=testset.collate_fn)
     idx_classes = {idx:i for idx,i in enumerate(config.obj_list)}
     NUM_CLASSES = len(config.obj_list)
+
+    if config.tta:
+        config.tta = TTA(
+            min_conf=config.min_conf_val, 
+            min_iou=config.min_iou_val, 
+            postprocess_mode=config.tta_ensemble_mode)
+    else:
+        config.tta = None
 
     net = EfficientDetBackbone(
         num_classes=NUM_CLASSES, 
@@ -129,7 +136,11 @@ def main(args, config):
     with tqdm(total=len(testloader)) as pbar:
         with torch.no_grad():
             for idx, batch in enumerate(testloader):
-                preds = model.inference_step(batch, args.min_conf, args.min_iou)
+                if config.tta is not None:
+                    preds = config.tta.make_tta_predictions(model, batch)
+                else:
+                    preds = model.inference_step(batch, config.min_conf_val, config.min_iou_val)
+
                 for idx, outputs in enumerate(preds):
                     img_id = batch['img_ids'][idx]
                     ori_img = batch['ori_imgs'][idx]
@@ -141,18 +152,22 @@ def main(args, config):
                     boxes = outputs['bboxes'] 
                     labels = outputs['classes']  
                     scores = outputs['scores']
+
+                    indexes = np.where(scores > config.min_conf_val)[0]
+                    
+                    boxes = boxes[indexes]
+                    scores = scores[indexes]
+                    classes = classes[indexes]
+
                     if len(boxes) == 0:
                         empty_imgs += 1
                         boxes = None
                     else:
                         boxes = change_box_order(boxes, order='xyxy2xywh')
-                        #boxes, scores, labels = box_nms_numpy(boxes, scores, labels, threshold=0.15, box_format='xywh')
                     if boxes is not None:
                         if args.output_path is not None:
                             out_path = os.path.join(args.output_path, f'{img_id}.png')
                             draw_boxes_v2(out_path, ori_img , boxes, labels, scores, idx_classes)
-
-                    
 
                     if args.submission:
                         if boxes is not None:

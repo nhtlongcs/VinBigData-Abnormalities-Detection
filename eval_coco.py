@@ -9,9 +9,6 @@ from tqdm import tqdm
 from pycocotools.coco import COCO
 from pycocotools.cocoeval import COCOeval
 
-from models.backbone import EfficientDetBackbone
-from utils.utils import postprocessing, box_nms_numpy
-from metrics import mAP
 
 def _eval(coco_gt, image_ids, pred_json_path):
     # load results in COCO evaluation tool
@@ -27,11 +24,10 @@ def _eval(coco_gt, image_ids, pred_json_path):
     coco_eval.summarize()
 
 def main(args, config):
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    if torch.cuda.is_available():
-        torch.cuda.manual_seed(42)
-    else:
-        torch.manual_seed(42)
+    os.environ['CUDA_VISIBLE_DEVICES'] = config.gpu_devices
+    num_gpus = len(config.gpu_devices.split(','))
+
+    device = torch.device("cuda" if torch.cuda.is_available() else 'cpu')
 
     val_transforms = get_augmentation(config, _type = 'val')
 
@@ -43,11 +39,20 @@ def main(args, config):
         train = False,
         transforms=val_transforms)
 
+    if config.tta:
+        config.tta = TTA(
+            min_conf=config.min_conf_val, 
+            min_iou=config.min_iou_val, 
+            postprocess_mode=config.tta_ensemble_mode)
+    else:
+        config.tta = None
+
     metric = mAPScores(
         dataset=testset,
-        max_images = args.max_images,
-        min_conf = args.min_conf,
-        min_iou = args.min_iou,
+        min_conf = config.min_conf_val,
+        min_iou = config.min_iou_val,
+        tta=config.tta,
+        max_images=config.max_images_val,
         retransforms = None)
 
     NUM_CLASSES = len(config.obj_list)
