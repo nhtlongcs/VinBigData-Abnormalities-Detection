@@ -169,6 +169,11 @@ class TTA():
                 weights = weights
             )
 
+            indexes = np.where(final_scores > self.min_conf)[0]
+            final_boxes = final_boxes[indexes]
+            final_scores = final_scores[indexes]
+            final_classes = final_classes[indexes]
+
             final_outputs.append({
                 'bboxes': final_boxes,
                 'scores': final_scores,
