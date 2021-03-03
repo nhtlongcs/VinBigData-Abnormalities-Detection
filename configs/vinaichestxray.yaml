@@ -34,6 +34,9 @@ settings:
   batch_size: 4
   num_workers: 4
 
+  min_iou_val:  0.5                     # IOU threshold for validation
+  min_conf_val: 0.01                    # Confidence score threshold for validation
+
   image_size: [1024,1024]               # [512, 640, 768, 896, 1024, 1280, 1280, 1536, 1536]
   keep_ratio: False                     # whether to use resize padding
 
@@ -51,3 +54,7 @@ settings:
   # gradient accumulation
   mixed_precision: True                # whether to use nvidia apex
   total_accumulate_steps: 32            # step * batch_size, not use if equal 0
+
+  # Test time augmentation
+  tta: True                             # whether to use TTA while validation
+  tta_ensemble_mode: "wbf"              # ensemble method when TTA

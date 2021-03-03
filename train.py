@@ -68,10 +68,19 @@ def train(args, config):
     if args.log_path is not None:
         args.log_path = os.path.join(args.log_path, args.config)
 
+    if config.tta:
+        tta = TTA(
+            min_conf=config.min_conf_val, 
+            min_iou=config.min_iou_val, 
+            postprocess_mode=config.tta_ensemble_mode)
+    else:
+        tta = None
+
     metric = mAPScores(
         dataset=testset,
-        min_conf = 0.01,
-        min_iou = 0.15,
+        min_conf = config.min_conf_val,
+        min_iou = config.min_iou_val,
+        tta=tta,
         retransforms = None)
 
     optimizer, optimizer_params = get_lr_policy(config.lr_policy)

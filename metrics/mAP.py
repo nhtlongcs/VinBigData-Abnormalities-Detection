@@ -7,7 +7,7 @@ from pycocotools.coco import COCO
 from pycocotools.cocoeval import COCOeval
 from .metrictemplate import TemplateMetric
 from utils.utils import change_box_order
-from utils.postprocess import postprocessing, box_nms_numpy
+from utils.postprocess import postprocessing
 
 def _eval(coco_gt, image_ids, pred_json_path, **kwargs):
     # load results in COCO evaluation tool
@@ -41,6 +41,7 @@ class mAPScores(TemplateMetric):
             retransforms=None,
             min_conf = 0.3, 
             min_iou = 0.3, 
+            tta = False,
             decimals = 4):
 
         self.coco_gt = COCO(dataset.ann_path)
@@ -54,6 +55,7 @@ class mAPScores(TemplateMetric):
                 collate_fn=dataset.collate_fn) # requires batch size = 1
 
         self.retransforms = retransforms
+        self.tta = tta
         self.min_conf = min_conf
         self.min_iou = min_iou
         self.decimals = decimals
@@ -64,7 +66,7 @@ class mAPScores(TemplateMetric):
 
         if not os.path.exists('results'):
             os.mkdir('results')
-
+            
     def reset(self):
         self.model = None
         self.image_ids = []
@@ -85,7 +87,11 @@ class mAPScores(TemplateMetric):
                     image_id = batch['img_ids'][0]
                     self.image_ids.append(image_id)
                     batch['imgs'] = batch['imgs'].to(self.model.device)
-                    preds = self.model.inference_step(batch, self.min_conf, self.min_iou)
+
+                    if self.tta is not None:
+                        preds = self.tta.make_tta_predictions(self.model, batch)
+                    else:
+                        preds = self.model.inference_step(batch, self.min_conf, self.min_iou)
 
                     if self.retransforms is not None:
                         preds = postprocessing(preds, batch['imgs'].cpu()[0], self.retransforms, out_format='xywh')[0]

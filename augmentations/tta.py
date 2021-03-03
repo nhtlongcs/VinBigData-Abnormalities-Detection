@@ -108,6 +108,7 @@ class TTA():
     def make_tta_predictions(self, model, batch, weights = None):
         
         # Set image size for all transforms
+        batch_size = batch['imgs'].shape[0]
         image_size = batch['imgs'].shape[-1]
         for tta_transform in self.tta_transforms:
             for single_transform in tta_transform.transforms:
@@ -160,7 +161,7 @@ class TTA():
                     predictions['scores'][i].append(scores)
 
         # Ensemble all boxes of each images
-        for i in range(batch['imgs'].shape[0]):
+        for i in range(batch_size):
             
             final_boxes, final_scores, final_classes = self.postprocess_fn(
                 predictions['bboxes'][i],
