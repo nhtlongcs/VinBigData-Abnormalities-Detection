@@ -33,16 +33,19 @@ class YoloDataset:
         ignore_classes = self.ignore_classes
 
         df = database.loc[database.image_id == image_id]
+        for ignore_class in ignore_classes:
+            df = df.loc[df.class_id != ignore_class]
 
         annotations = [
             row
             for row in zip(df["class_id"], df["x_mid"], df["y_mid"], df["w"], df["h"])
         ]
+        if len(annotations) == 0:
+            return
         with open(join(save_dir, image_id + ".txt"), "w") as f:
             for annotation in annotations:
                 id, x, y, w, h = annotation
-                if int(id) not in ignore_classes:
-                    f.write(f"{id} {x} {y} {w} {h}\n")
+                f.write(f"{id} {x} {y} {w} {h}\n")
             f.close()
 
     def write_all_annotations(self, save_dir: str = ".cache") -> None:
@@ -152,6 +155,7 @@ class CocoDataset:
         labels = self.get_order_classes()
 
         for label_idx, label in enumerate(labels):
+
             if int(label_idx) not in ignore_classes:
                 class_dict = {
                     "supercategory": None,
