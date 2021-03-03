@@ -47,7 +47,7 @@ class mAPScores(TemplateMetric):
         self.coco_gt = COCO(dataset.ann_path)
         self.dataloader = torch.utils.data.DataLoader(
                 dataset, 
-                batch_size=1, 
+                batch_size=4, 
                 num_workers=4, 
                 pin_memory = True,
                 drop_last= True,
@@ -84,44 +84,44 @@ class mAPScores(TemplateMetric):
                 for idx, batch in enumerate(self.dataloader):
                     if idx > self.max_images:
                         break
-                    image_id = batch['img_ids'][0]
-                    self.image_ids.append(image_id)
-                    batch['imgs'] = batch['imgs'].to(self.model.device)
-
+                    
                     if self.tta is not None:
                         preds = self.tta.make_tta_predictions(self.model, batch)
                     else:
                         preds = self.model.inference_step(batch, self.min_conf, self.min_iou)
-
-                    if self.retransforms is not None:
-                        preds = postprocessing(preds, batch['imgs'].cpu()[0], self.retransforms, out_format='xywh')[0]
-
-                    preds = preds[0]
-
-                    if self.retransforms is not None:
-                        bbox_xywh = preds['bboxes']
-                    else:
-                        bbox_xywh = preds['bboxes']
                     
+                    if self.retransforms is not None:
+                            preds = postprocessing(preds, batch['imgs'].cpu(), self.retransforms, out_format='xywh')
 
-                    if bbox_xywh is None or len(bbox_xywh) == 0:
-                        empty_imgs += 1
-                    else:
-                        bbox_xywh = change_box_order(bbox_xywh, order='xyxy2xywh')
-                        cls_ids = preds['classes']
-                        cls_conf = preds['scores']
-                        for i in range(bbox_xywh.shape[0]):
-                            score = float(cls_conf[i])
-                            label = int(cls_ids[i])
-                            box = bbox_xywh[i, :]
-                            image_result = {
-                                'image_id': image_id,
-                                'category_id': label,
-                                'score': float(score),
-                                'bbox': box.tolist(),
-                            }
+                    for i in range(len(preds)):
+                        image_id = batch['img_ids'][i]
+                        self.image_ids.append(image_id)
 
-                            results.append(image_result)
+                        pred = preds[i]
+
+                        if self.retransforms is not None:
+                            bbox_xywh = pred['bboxes']
+                        else:
+                            bbox_xywh = pred['bboxes']
+                        
+                        if bbox_xywh is None or len(bbox_xywh) == 0:
+                            empty_imgs += 1
+                        else:
+                            bbox_xywh = change_box_order(bbox_xywh, order='xyxy2xywh')
+                            cls_ids = pred['classes']
+                            cls_conf = pred['scores']
+                            for i in range(bbox_xywh.shape[0]):
+                                score = float(cls_conf[i])
+                                label = int(cls_ids[i])
+                                box = bbox_xywh[i, :]
+                                image_result = {
+                                    'image_id': image_id,
+                                    'category_id': label,
+                                    'score': float(score),
+                                    'bbox': box.tolist(),
+                                }
+
+                                results.append(image_result)
                     pbar.update(1)
                     pbar.set_description(f'Empty images: {empty_imgs}')
 

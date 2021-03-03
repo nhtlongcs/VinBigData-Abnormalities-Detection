@@ -123,11 +123,7 @@ class TTA():
                 'scores': {}
             }
             for aug_idx, tta_transform in enumerate(self.tta_transforms):
-                
-                targets = batch['targets']
-                image_names = batch['img_names']
                 imgs = batch['imgs']
-
                 tta_imgs = tta_transform.batch_augment(imgs.clone())
                 tta_batch = {
                     'imgs': tta_imgs, 

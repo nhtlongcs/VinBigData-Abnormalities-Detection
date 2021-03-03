@@ -36,7 +36,8 @@ settings:
 
   min_iou_val:  0.5                     # IOU threshold for validation
   min_conf_val: 0.01                    # Confidence score threshold for validation
-
+  max_images_val: 10000                 # max number of images for validation
+  
   image_size: [1024,1024]               # [512, 640, 768, 896, 1024, 1280, 1280, 1536, 1536]
   keep_ratio: False                     # whether to use resize padding
 
@@ -52,8 +53,8 @@ settings:
 
 
   # gradient accumulation
-  mixed_precision: True                # whether to use nvidia apex
-  total_accumulate_steps: 32            # step * batch_size, not use if equal 0
+  mixed_precision: False                # whether to use nvidia apex
+  total_accumulate_steps: 8            # step * batch_size, not use if equal 0
 
   # Test time augmentation
   tta: True                             # whether to use TTA while validation

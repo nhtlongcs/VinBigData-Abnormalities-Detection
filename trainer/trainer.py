@@ -8,7 +8,7 @@ from loggers.loggers import Logger
 from utils.utils import clip_gradient
 import time
 from utils.utils import change_box_order, draw_pred_gt_boxes
-from utils.postprocess import box_nms_numpy
+from utils.postprocess import box_fusion
 from torch.cuda import amp
 
 class Trainer():
@@ -51,7 +51,7 @@ class Trainer():
         for epoch in range(self.epoch, self.num_epochs):
             try:
                 self.epoch = epoch
-                self.training_epoch()
+                # self.training_epoch()
 
                 if self.evaluate_per_epoch != 0:
                     if epoch % self.evaluate_per_epoch == 0 and epoch+1 >= self.evaluate_per_epoch:
@@ -217,7 +217,12 @@ class Trainer():
 
             image_names = batch['img_names']
             imgs = batch['imgs']
-            outputs = self.model.inference_step(batch, conf_threshold = 0.1, iou_threshold = 0.2)
+
+            if self.cfg.tta is not None:
+                outputs = self.cfg.tta.make_tta_predictions(self.model, batch)
+            else:
+                outputs = self.model.inference_step(batch, conf_threshold = self.cfg.min_conf_val, iou_threshold = self.cfg.min_iou_val)
+
             for idx in range(len(outputs)):
                 img = imgs[idx]
                 image_name = image_names[idx]

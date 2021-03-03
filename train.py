@@ -69,18 +69,19 @@ def train(args, config):
         args.log_path = os.path.join(args.log_path, args.config)
 
     if config.tta:
-        tta = TTA(
+        config.tta = TTA(
             min_conf=config.min_conf_val, 
             min_iou=config.min_iou_val, 
             postprocess_mode=config.tta_ensemble_mode)
     else:
-        tta = None
+        config.tta = None
 
     metric = mAPScores(
         dataset=testset,
         min_conf = config.min_conf_val,
         min_iou = config.min_iou_val,
-        tta=tta,
+        tta=config.tta,
+        max_images=config.max_images_val,
         retransforms = None)
 
     optimizer, optimizer_params = get_lr_policy(config.lr_policy)
@@ -138,7 +139,7 @@ if __name__ == '__main__':
     parser.add_argument('--config' , type=str, help='project file that contains parameters')
     parser.add_argument('-c', '--compound_coef', type=str, default='0', help='coefficients of efficientdet')
     parser.add_argument('--print_per_iter', type=int, default=300, help='Number of iteration to print')
-    parser.add_argument('--val_interval', type=int, default=1, help='Number of epoches between valing phases')
+    parser.add_argument('--val_interval', type=int, default=2, help='Number of epoches between valing phases')
     parser.add_argument('--save_interval', type=int, default=1000, help='Number of steps between saving')
     parser.add_argument('--log_path', type=str, default='loggers/runs')
     parser.add_argument('--resume', type=str, default=None,
