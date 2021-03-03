@@ -51,7 +51,7 @@ class Trainer():
         for epoch in range(self.epoch, self.num_epochs):
             try:
                 self.epoch = epoch
-                # self.training_epoch()
+                self.training_epoch()
 
                 if self.evaluate_per_epoch != 0:
                     if epoch % self.evaluate_per_epoch == 0 and epoch+1 >= self.evaluate_per_epoch:
