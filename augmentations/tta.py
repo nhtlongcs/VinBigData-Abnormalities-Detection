@@ -4,12 +4,12 @@ from itertools import product
 from models import EfficientDetBackbone, Detector
 from configs import Config
 from utils.utils import draw_pred_gt_boxes, change_box_order
-from utils.postprocess import box_wbf, box_nms_numpy
+from utils.postprocess import box_fusion
 from utils.getter import *
 
 class BaseTTA:
     """ author: @shonenkov """
-    image_size = 1024
+    image_size = None
 
     def augment(self, image):
         raise NotImplementedError
@@ -90,15 +90,14 @@ class TTACompose(BaseTTA):
         return self.prepare_boxes(boxes)
 
 class TTA():
+    """
+    Only support square images
+    """
     def __init__(self, postprocess_mode='wbf', min_conf=0.1, min_iou=0.5):
         self.postprocess_mode = postprocess_mode
         self.min_conf = min_conf
         self.min_iou = min_iou
-
-        if postprocess_mode == 'wbf':
-            self.postprocess_fn = box_wbf
-        elif postprocess_mode == 'nms':
-            self.postprocess_fn = box_nms_numpy
+        self.postprocess_fn = box_fusion
 
         self.tta_transforms = []
         for tta_combination in product([TTAHorizontalFlip(), None], 
@@ -106,7 +105,15 @@ class TTA():
                                     [TTARotate90(), None]):
             self.tta_transforms.append(TTACompose([tta_transform for tta_transform in tta_combination if tta_transform]))
 
-    def make_tta_predictions(self, model, batch):
+    def make_tta_predictions(self, model, batch, weights = None):
+        
+        # Set image size for all transforms
+        image_size = batch['imgs'].shape[-1]
+        for tta_transform in self.tta_transforms:
+            for single_transform in tta_transform.transforms:
+                single_transform.image_size = int(image_size)
+
+            
         final_outputs = []
         with torch.no_grad():
             predictions = {
@@ -115,7 +122,6 @@ class TTA():
                 'scores': {}
             }
             for aug_idx, tta_transform in enumerate(self.tta_transforms):
-                
                 
                 targets = batch['targets']
                 image_names = batch['img_names']
@@ -126,6 +132,8 @@ class TTA():
                     'imgs': tta_imgs, 
                     'img_sizes': batch['img_sizes'],
                     'img_scales': batch['img_scales']}
+
+                #  Feed imgs through model
                 outputs = model.inference_step(tta_batch, conf_threshold = self.min_conf, iou_threshold = self.min_iou)
                 
                 for i, output in enumerate(outputs):
@@ -140,6 +148,7 @@ class TTA():
                     classes = output['classes']
 
                     indexes = np.where(scores > self.min_conf)[0]
+                    
                     boxes = boxes[indexes]
                     scores = scores[indexes]
                     classes = classes[indexes]
@@ -150,14 +159,19 @@ class TTA():
                     predictions['classes'][i].append(classes)
                     predictions['scores'][i].append(scores)
 
-
+        # Ensemble all boxes of each images
         for i in range(batch['imgs'].shape[0]):
+            
             final_boxes, final_scores, final_classes = self.postprocess_fn(
                 predictions['bboxes'][i],
                 predictions['scores'][i],
                 predictions['classes'][i],
-                image_size=batch['imgs'].shape[-1]
+                mode=self.postprocess_mode,
+                image_size=image_size, 
+                iou_threshold=self.min_iou,
+                weights = weights
             )
+
             final_outputs.append({
                 'bboxes': final_boxes,
                 'scores': final_scores,
@@ -172,7 +186,7 @@ class TTA():
 if __name__=='__main__':
     config = Config('./configs/vinaichestxray.yaml')                   
 
-    device = torch.device('cpu')
+    device = torch.device('cuda')
 
     NUM_CLASSES = len(config.obj_list)
 
@@ -207,12 +221,13 @@ if __name__=='__main__':
         collate_fn=testset.collate_fn, 
         batch_size=2)
 
-    tta = TTA(min_conf=0.1, min_iou=0.5)
+    tta = TTA(min_conf=0.1, min_iou=0.2, postprocess_mode='wbf')
     for i, batch in enumerate(testloader):
         targets = batch['targets']
         image_names = batch['img_names']
         imgs = batch['imgs']
-        outputs = tta.make_tta_predictions(model, batch)
+        with torch.no_grad():
+            outputs = tta.make_tta_predictions(model, batch) #model.inference_step(batch, conf_threshold = 0.1, iou_threshold = 0.5) #
 
         for idx in range(len(outputs)):
             img = imgs[idx]
