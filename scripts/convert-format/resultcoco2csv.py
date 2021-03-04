@@ -7,11 +7,11 @@ from glob import glob
 from tqdm import tqdm
 
 
-def convert_coco_json_to_csv(filename, output_path, meta_path=None, normalize=True):
-    if normalize:
-        assert meta_path != None, "missing meta data path <image_id,width,height>"
-        metadata = pd.read_csv(meta_path)
-        metadata = metadata.set_index("image_id").T.to_dict()
+def convert_coco_json_to_csv(filename, output_path, meta_size=512, normalize=True):
+    # if normalize:
+    #     assert meta_path != None, "missing meta data path <image_id,width,height>"
+    #     metadata = pd.read_csv(meta_path)
+    #     metadata = metadata.set_index("image_id").T.to_dict()
     os.makedirs(output_path, exist_ok=True)
     filename = Path(filename)
     s = json.load(open(filename, "r"))
@@ -29,13 +29,13 @@ def convert_coco_json_to_csv(filename, output_path, meta_path=None, normalize=Tr
         y1 = ann["bbox"][1]
         y2 = ann["bbox"][1] + ann["bbox"][3]
         if normalize:
-            assert (
-                image_id in metadata.keys()
-            ), "mismatch key json and metadata, please check again"
-            x1 /= metadata[image_id]["width"]
-            x2 /= metadata[image_id]["width"]
-            y1 /= metadata[image_id]["height"]
-            y2 /= metadata[image_id]["height"]
+            # assert (
+            #     image_id in metadata.keys()
+            # ), "mismatch key json and metadata, please check again"
+            x1 /= meta_size
+            x2 /= meta_size
+            y1 /= meta_size
+            y2 /= meta_size
         label = ann["category_id"]
         score = ann["score"]
         out.write(
@@ -65,9 +65,12 @@ parser.add_argument(
 )
 parser.add_argument(
     "--meta-path",
-    default="data/train_info.csv",
+    default="data/meta/train_info.csv",
     type=str,
     help="meta data width height path",
+)
+parser.add_argument(
+    "--size", default=1280, type=int, help="meta data width height resized",
 )
 parser.add_argument(
     "--normalize", action="store_true", default=False, help="normalize bboxes flag",
@@ -76,12 +79,11 @@ args = parser.parse_args()
 
 if os.path.isfile(args.json):
     convert_coco_json_to_csv(
-        filename=args.json, output_path=args.output_path, meta_path=args.meta_path
+        filename=args.json, output_path=args.output_path, meta_size=args.size
     )
 else:
     json_ls = glob(f"{args.json}/*.json")
     for json_file in json_ls:
         convert_coco_json_to_csv(
-            filename=json_file, output_path=args.output_path, meta_path=args.meta_path
+            filename=json_file, output_path=args.output_path, meta_size=args.size
         )
-
