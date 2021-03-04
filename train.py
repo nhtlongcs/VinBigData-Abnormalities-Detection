@@ -59,7 +59,8 @@ def train(args, config):
     net = EfficientDetBackbone(
         num_classes=NUM_CLASSES, 
         compound_coef=args.compound_coef, 
-        load_weights=True, 
+        load_weights=False, 
+        pretrained_backbone_path=config.pretrained_backbone,
         image_size=config.image_size)
 
     if args.saved_path is not None:

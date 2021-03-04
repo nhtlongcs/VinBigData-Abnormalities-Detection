@@ -10,14 +10,14 @@ from .effdet.efficientdet import HeadNet
 
 
 class EfficientDetBackbone(nn.Module):
-    def __init__(self, num_classes=80, compound_coef=0, load_weights=False, image_size=[512,512],**kwargs):
+    def __init__(self, num_classes=80, compound_coef=0, load_weights=False, image_size=[512,512], pretrained_backbone_path=None, **kwargs):
         super(EfficientDetBackbone, self).__init__()
         self.name = f'EfficientDet-D{compound_coef}'
         config = get_efficientdet_config(f'tf_efficientdet_d{compound_coef}')
         config.image_size = image_size
         config.norm_kwargs=dict(eps=.001, momentum=.01)
 
-        net = EfficientDet(config, pretrained_backbone=load_weights)
+        net = EfficientDet(config, pretrained_backbone=load_weights, pretrained_backbone_path=pretrained_backbone_path)
         net.reset_head(num_classes=num_classes)
         net.class_net = HeadNet(config, num_outputs=config.num_classes)
 

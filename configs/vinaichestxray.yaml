@@ -5,8 +5,8 @@ settings:
   train_imgs: images/train
   val_imgs: images/train
   test_imgs: images/test
-  train_anns: annotations/1024_noratio_fold0_train.json
-  val_anns: annotations/1024_noratio_fold0_val.json
+  train_anns: annotations/0_train.json
+  val_anns: annotations/0_val.json
 
   obj_list: [
     'No Finding',                       #Background
@@ -29,9 +29,11 @@ settings:
 
   #################   TRAINING CONFIG   ###################
   
+  pretrained_backbone:                   # Pretrained backbone
+ 
   gpu_devices: '0,1'                     # supports multi-gpus
   num_epochs: 100
-  batch_size: 4
+  batch_size: 2
   num_workers: 4
 
   min_iou_val:  0.5                     # IOU threshold for validation
@@ -47,15 +49,17 @@ settings:
   # learning rate policy
   lr_policy:
     name: "adam"                         #[adam|sgd]
-    lr: 0.01                            #[adam: 1e-3 | sgd: 1e-2]
+    lr: 0.005                            #[adam: 1e-3 | sgd: 1e-2]
     momentum: 0.937
     weight_decay: 0.0005
 
 
   # gradient accumulation
   mixed_precision: False                # whether to use nvidia apex
-  total_accumulate_steps: 8            # step * batch_size, not use if equal 0
+  total_accumulate_steps: 0            # step * batch_size, not use if equal 0
 
   # Test time augmentation
-  tta: True                             # whether to use TTA while validation
+  tta: False                             # whether to use TTA while validation
   tta_ensemble_mode: "wbf"              # ensemble method when TTA
+
+  

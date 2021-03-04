@@ -553,13 +553,18 @@ def get_feature_info(backbone):
 
 class EfficientDet(nn.Module):
 
-    def __init__(self, config, pretrained_backbone=True, alternate_init=False):
+    def __init__(self, config, pretrained_backbone=True, alternate_init=False, pretrained_backbone_path=None, freeze_backbone=False):
         super(EfficientDet, self).__init__()
         self.config = config
         set_config_readonly(self.config)
         self.backbone = create_model(
             config.backbone_name, features_only=True, out_indices=(2, 3, 4),
             pretrained=pretrained_backbone, **config.backbone_args)
+
+        if pretrained_backbone_path is not None:
+            self.backbone.load_state_dict(torch.load(pretrained_backbone_path, map_location="cpu"))
+
+
         feature_info = get_feature_info(self.backbone)
         self.fpn = BiFpn(self.config, feature_info)
         self.class_net = HeadNet(self.config, num_outputs=self.config.num_classes)
