@@ -237,7 +237,7 @@ class Trainer():
                     
                 boxes = boxes[indexes]
                 scores = scores[indexes]
-                classes = classes[indexes]
+                labels = labels[indexes]
 
                 target = targets[idx]
                 target_boxes = target['boxes']
