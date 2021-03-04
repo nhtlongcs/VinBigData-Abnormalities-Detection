@@ -1,5 +1,24 @@
 """
 COCO Mean Average Precision Evaluation
+
+True Positive (TP): Predicted as positive as was correct
+False Positive (FP): Predicted as positive but was incorrect
+False Negative (FN): Failed to predict an object that was there
+
+if IOU prediction >= IOU threshold, prediction is TP
+if 0 < IOU prediction < IOU threshold, prediction is FP
+
+Precision measures how accurate your predictions are. Precision = TP/(TP+FP)
+Recall measures how well you find all the positives. Recal = TP/(TP+FN)
+
+Average Precision (AP) is finding the area under the precision-recall curve.
+Mean Average  Precision (MAP) is AP averaged over all categories.
+
+AP@[.5:.95] corresponds to the average AP for IoU from 0.5 to 0.95 with a step size of 0.05
+AP@.75 means the AP with IoU=0.75
+
+*Under the COCO context, there is no difference between AP and mAP
+
 Example execution:
 
 python evaluate.py --gt_csv=0_val.csv --pred_csv=0_predict.csv
@@ -43,6 +62,10 @@ class mAPScore:
     Arguments:
         gt_df (pd.DataFrame):       ground truth dataframe, format: [image_id,class_id,x_min,y_min,x_max,y_max,width,height]
         pred_df (pd.DataFrame):     prediction dataframe, format: [image_id,class_id,x_min,y_min,x_max,y_max,score]
+        is_normalized:              True if the predictions are normalized
+
+    *** image_id in pred_df must be included in gt_df's image_id ***
+
 
     Example usage:
 
@@ -71,6 +94,7 @@ class mAPScore:
         # Convert csv to json
         self.make_gt_json_file()
         self.coco_gt = COCO(self.gt_json)
+        self.get_image_ids()
 
     def process_df(self, _df):
         # Fill class 14 with [0,0,1,1]
@@ -209,18 +233,12 @@ class mAPScore:
             json.dump(results, outfile)
 
     def get_image_ids(self):
-        self.image_ids = []
-        with open(self.pred_json, "r") as f:
-            data = json.load(f)
-            for item in data:
-                image_id = item["image_id"]
-                self.image_ids.append(image_id)
-
+        self.image_ids = list(self.image_dict.values())
 
     def update_pred(self, pred_df):
         self.pred_df = self.process_df(pred_df)
         self.make_pred_json_file()
-        self.get_image_ids()
+        
 
     def evaluate(self):
         # load results in COCO evaluation tool
