@@ -38,29 +38,54 @@ LABELS = [
     "No Finding",
 ]
 
-
-def csv2json(gt_csv, pred_csv):
+class mAPScore:
     """
-    Convert .csv to .json
-    Input: .csv file and mode ('gt' or 'pred')
-    Output .json format example: (source: https://cocodataset.org/#format-results)
-    [{
-        "image_id": int, 
-        "category_id": int, 
-        "bbox": [x,y,width,height], 
-        "score": float,
-    }]
+    Arguments:
+        gt_df (pd.DataFrame):       ground truth dataframe, format: [image_id,class_id,x_min,y_min,x_max,y_max,width,height]
+        pred_df (pd.DataFrame):     prediction dataframe, format: [image_id,class_id,x_min,y_min,x_max,y_max,score]
 
+    Example usage:
 
-    image_id,class_id,x_min,y_min,x_max,y_max,width,height
-    image_id,class_id,x_min,y_min,x_max,y_max,score
+        pred_df = pd.read_csv(args.pred_csv)
+        gt_df = pd.read_csv(args.gt_csv)
+
+        metric = mAPScore(gt_df, is_normalized=True)
+        for i in range(NUM_EPOCHS):
+            pred_df = ...
+            metric.update_pred(pred_df)
+            metric.evaluate()
+
     """
 
-    def make_gt_file(df, save_filename="./temp/gt.json"):
-        database = df
+    def __init__(self, gt_df, is_normalized=True):
+
+        self.gt_df = gt_df
+        self.gt_json = "./temp/gt.json"
+        self.pred_json = "./temp/pred.json"
+        self.is_normalized = is_normalized
+        
+        self.gt_df = self.process_df(self.gt_df)
+        if self.is_normalized:
+            self.tmp_df = self.gt_df[["image_id", "width", "height"]]
+
+        # Convert csv to json
+        self.make_gt_json_file()
+        self.coco_gt = COCO(self.gt_json)
+
+    def process_df(self, _df):
+        # Fill class 14 with [0,0,1,1]
+
+        df = _df.fillna(0)
+
+        df.loc[df["class_id"] == 14, "x_max"] = 1
+        df.loc[df["class_id"] == 14, "y_max"] = 1
+        return df
+
+    def make_gt_json_file(self):
+        database = self.gt_df
 
         try:
-            os.makedirs(os.path.dirname(save_filename))
+            os.makedirs(os.path.dirname(self.gt_json))
         except:
             pass
 
@@ -72,7 +97,7 @@ def csv2json(gt_csv, pred_csv):
 
         img_count = 0
         item_count = 0
-        image_dict = {}
+        self.image_dict = {}
         labels = LABELS
 
         for label_idx, label in enumerate(labels):
@@ -100,10 +125,10 @@ def csv2json(gt_csv, pred_csv):
         for row in annotations:
             image_name, class_id, xmin, ymin, xmax, ymax, width, height = row
 
-            if image_name not in image_dict.keys():
-                image_dict[image_name] = img_count
+            if image_name not in self.image_dict.keys():
+                self.image_dict[image_name] = img_count
                 img_count += 1
-                image_id = image_dict[image_name]
+                image_id = self.image_dict[image_name]
                 img_dict = {
                     "file_name": image_name + ".png",
                     "height": height,
@@ -114,7 +139,7 @@ def csv2json(gt_csv, pred_csv):
 
             ann_w = xmax - xmin
             ann_h = ymax - ymin
-            image_id = image_dict[image_name]
+            image_id = self.image_dict[image_name]
             ann_dict = {
                 "id": item_count,
                 "image_id": image_id,
@@ -126,34 +151,48 @@ def csv2json(gt_csv, pred_csv):
             item_count += 1
             my_dict["annotations"].append(ann_dict)
 
-        if os.path.isfile(save_filename):
-            os.remove(save_filename)
-        with open(save_filename, "w") as outfile:
+        if os.path.isfile(self.gt_json):
+            os.remove(self.gt_json)
+        with open(self.gt_json, "w") as outfile:
             json.dump(my_dict, outfile)
-        return save_filename, image_dict
 
-    def make_pred_file(df, image_dict, tmp_df, save_filename="./temp/pred.json"):
+    def make_pred_json_file(self):
+
+        """
+           Output .json format example: (source: https://cocodataset.org/#format-results)
+            [{
+                "image_id": int, 
+                "category_id": int, 
+                "bbox": [x,y,width,height], 
+                "score": float,
+            }]
+        """
+
         zipped = zip(
-            df["image_id"],
-            df["class_id"],
-            df["x_min"],
-            df["y_min"],
-            df["x_max"],
-            df["y_max"],
-            df["score"],
+            self.pred_df["image_id"],
+            self.pred_df["class_id"],
+            self.pred_df["x_min"],
+            self.pred_df["y_min"],
+            self.pred_df["x_max"],
+            self.pred_df["y_max"],
+            self.pred_df["score"],
         )
         annotations = [row for row in zipped]
         results = []
         for ann in tqdm(annotations):
             image_id, class_id, xmin, ymin, xmax, ymax, score = ann
-            image_df = tmp_df.loc[tmp_df["image_id"] == image_id]
+            if self.is_normalized:
+                image_df = self.tmp_df.loc[self.tmp_df["image_id"] == image_id]
 
-            width = int(image_df["width"].iloc[0])
-            height = int(image_df["height"].iloc[0])
+                width = int(image_df["width"].iloc[0])
+                height = int(image_df["height"].iloc[0])
+            else:
+                width = 1
+                height = 1
 
             results.append(
                 {
-                    "image_id": int(image_dict[image_id]),
+                    "image_id": int(self.image_dict[image_id]),
                     "category_id": class_id + 1,
                     "bbox": [
                         int(xmin * width),
@@ -164,48 +203,10 @@ def csv2json(gt_csv, pred_csv):
                     "score": float(score),
                 }
             )
-        if os.path.isfile(save_filename):
-            os.remove(save_filename)
-        with open(save_filename, "w") as outfile:
+        if os.path.isfile(self.pred_json):
+            os.remove(self.pred_json)
+        with open(self.pred_json, "w") as outfile:
             json.dump(results, outfile)
-        return save_filename
-
-    gt_df = pd.read_csv(gt_csv)
-    tmp_df = gt_df[["image_id", "width", "height"]]
-
-    pred_df = pd.read_csv(pred_csv)
-
-    # Fill class 14 with [0,0,1,1]
-    gt_df = gt_df.fillna(0)
-    pred_df = pred_df.fillna(0)
-
-    gt_df.loc[gt_df["class_id"] == 14, "x_max"] = 1
-    pred_df.loc[pred_df["class_id"] == 14, "x_max"] = 1
-    gt_df.loc[gt_df["class_id"] == 14, "y_max"] = 1
-    pred_df.loc[pred_df["class_id"] == 14, "y_max"] = 1
-
-    # Make json file
-    gt_json, image_dict = make_gt_file(gt_df)
-    pred_json = make_pred_file(pred_df, image_dict, tmp_df)
-
-    return gt_json, pred_json
-
-
-class mAPScore:
-    """
-    Arguments:
-        gt_csv (str):      path to ground truth csv file (in COCO format)
-        pred_csv (str):    path to prediction csv file
-    """
-
-    def __init__(self, gt_csv, pred_csv):
-        self.gt_csv = gt_csv
-        self.pred_csv = pred_csv
-        # Convert csv to json
-        self.gt_json, self.pred_json = csv2json(self.gt_csv, self.pred_csv)
-
-        self.coco_gt = COCO(self.gt_json)
-        self.get_image_ids()
 
     def get_image_ids(self):
         self.image_ids = []
@@ -214,6 +215,12 @@ class mAPScore:
             for item in data:
                 image_id = item["image_id"]
                 self.image_ids.append(image_id)
+
+
+    def update_pred(self, pred_df):
+        self.pred_df = self.process_df(pred_df)
+        self.make_pred_json_file()
+        self.get_image_ids()
 
     def evaluate(self):
         # load results in COCO evaluation tool
@@ -244,5 +251,9 @@ class mAPScore:
 
 
 if __name__ == "__main__":
-    metric = mAPScore(args.gt_csv, args.pred_csv)
+    pred_df = pd.read_csv(args.pred_csv)
+    gt_df = pd.read_csv(args.gt_csv)
+
+    metric = mAPScore(gt_df, is_normalized=True)
+    metric.update_pred(pred_df)
     metric.evaluate()
