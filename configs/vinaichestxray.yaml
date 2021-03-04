@@ -29,11 +29,11 @@ settings:
 
   #################   TRAINING CONFIG   ###################
   
-  pretrained_backbone:                   # Pretrained backbone
- 
+  pretrained_backbone: './weights/pretrained/pretrained_fold0_d4.pth'                  # Pretrained backbone
+  
   gpu_devices: '0,1'                     # supports multi-gpus
   num_epochs: 100
-  batch_size: 2
+  batch_size: 8
   num_workers: 4
 
   min_iou_val:  0.5                     # IOU threshold for validation
@@ -61,5 +61,3 @@ settings:
   # Test time augmentation
   tta: False                             # whether to use TTA while validation
   tta_ensemble_mode: "wbf"              # ensemble method when TTA
-
-  

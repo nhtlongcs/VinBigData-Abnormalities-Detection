@@ -60,6 +60,7 @@ def train(args, config):
         num_classes=NUM_CLASSES, 
         compound_coef=args.compound_coef, 
         load_weights=False, 
+        freeze_backbone = args.freeze_backbone,
         pretrained_backbone_path=config.pretrained_backbone,
         image_size=config.image_size)
 
@@ -147,7 +148,8 @@ if __name__ == '__main__':
                         help='whether to load weights from a checkpoint, set None to initialize')
     parser.add_argument('--saved_path', type=str, default='./weights')
     parser.add_argument('--no_visualization', action='store_false', help='whether to visualize box to ./sample when validating (for debug), default=on')
-
+    parser.add_argument('--freeze_backbone', action='store_true', help='whether to freeze the backbone')
+    
     args = parser.parse_args()
     config = Config(os.path.join('configs',args.config+'.yaml'))
 

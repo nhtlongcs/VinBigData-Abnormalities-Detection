@@ -13,7 +13,7 @@ import math
 from collections import OrderedDict
 from typing import List, Callable, Optional, Union, Tuple
 from functools import partial
-
+import copy
 
 from timm import create_model
 from timm.models.layers import create_conv2d, create_pool2d, Swish, get_act_layer
@@ -562,8 +562,13 @@ class EfficientDet(nn.Module):
             pretrained=pretrained_backbone, **config.backbone_args)
 
         if pretrained_backbone_path is not None:
+            print("load pretrained")
             self.backbone.load_state_dict(torch.load(pretrained_backbone_path, map_location="cpu"))
 
+        if freeze_backbone and pretrained_backbone_path is not None:
+            print("freeze backbone")
+            for param in self.backbone.parameters():
+                param.requires_grad = False
 
         feature_info = get_feature_info(self.backbone)
         self.fpn = BiFpn(self.config, feature_info)
