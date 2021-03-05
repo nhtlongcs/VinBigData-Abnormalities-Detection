@@ -99,18 +99,11 @@ class Trainer():
 
             if self.use_accumulate:
                 if (i+1) % self.accumulate_steps == 0 or i == len(self.trainloader)-1:
-                    if self.use_amp:
-                        self.scaler.step(self.optimizer)
-                        self.scaler.update()
-                    else:
+                    if not self.use_amp:
                         self.optimizer.step()
                     self.optimizer.zero_grad()
             else:
-                if self.use_amp:
-                    pass
-                    # self.scaler.step(self.optimizer)
-                    # self.scaler.update()
-                else:
+                if not self.use_amp:
                     self.optimizer.step()
                 self.optimizer.zero_grad()
 
