@@ -10,6 +10,7 @@ import time
 from utils.utils import change_box_order, draw_pred_gt_boxes
 from utils.postprocess import box_fusion
 from torch.cuda import amp
+from timm.utils import NativeScaler
 
 class Trainer():
     def __init__(self,
@@ -60,9 +61,9 @@ class Trainer():
           
                 if self.scheduler is not None:
                     self.scheduler.step()
-                    lr = [x['lr'] for x in self.optimizer.param_groups]
-                    lr_tags = ['Learning rate/lr0', 'Learning rate/lr1', 'Learning rate/lr2'] 
-                    log_dict = {k:v for k,v in zip(lr_tags, lr)}
+                    lrl = [x['lr'] for x in self.optimizer.param_groups]
+                    lr = sum(lrl) / len(lrl)
+                    log_dict = {'Learning rate': lr}
                     self.logging(log_dict)
                 
 
@@ -88,13 +89,13 @@ class Trainer():
             if self.use_amp:
                 with amp.autocast():
                     loss, loss_dict = self.model.training_step(batch)
-                    self.scaler.scale(loss).backward()
+                self.scaler(loss, self.optimizer, clip_grad=self.clip_grad, parameters=self.model.parameters())
             else:
                 loss, loss_dict = self.model.training_step(batch)
                 loss.backward()
             
-            if self.clip_grad is not None:
-                clip_gradient(self.optimizer, self.clip_grad)
+                if self.clip_grad is not None:
+                    clip_gradient(self.optimizer, self.clip_grad)
 
             if self.use_accumulate:
                 if (i+1) % self.accumulate_steps == 0 or i == len(self.trainloader)-1:
@@ -106,11 +107,14 @@ class Trainer():
                     self.optimizer.zero_grad()
             else:
                 if self.use_amp:
-                    self.scaler.step(self.optimizer)
-                    self.scaler.update()
+                    pass
+                    # self.scaler.step(self.optimizer)
+                    # self.scaler.update()
                 else:
                     self.optimizer.step()
                 self.optimizer.zero_grad()
+
+            torch.cuda.synchronize()
 
             end_time = time.time()
 
@@ -281,7 +285,7 @@ class Trainer():
         self.use_amp = False
         if self.cfg.mixed_precision:
             self.use_amp = True
-            self.scaler = amp.GradScaler()
+            self.scaler = NativeScaler()
 
     def forward_test(self):
         self.model.eval()
@@ -300,7 +304,7 @@ class Trainer():
     def set_attribute(self, kwargs):
         self.checkpoint = None
         self.scheduler = None
-        self.clip_grad = None
+        self.clip_grad = 10.0
         self.logger = None
         self.evaluate_per_epoch = 1
         self.visualize_when_val = True

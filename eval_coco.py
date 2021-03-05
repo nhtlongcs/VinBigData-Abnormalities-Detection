@@ -9,6 +9,7 @@ from tqdm import tqdm
 from pycocotools.coco import COCO
 from pycocotools.cocoeval import COCOeval
 
+seed_everything()
 
 def _eval(coco_gt, image_ids, pred_json_path):
     # load results in COCO evaluation tool
@@ -85,8 +86,6 @@ if __name__ == '__main__':
     parser.add_argument('-c', '--compound_coef', type=int, default=0, help='coefficients of efficientdet')
     parser.add_argument('--max_images' , type=int, help='max number of images', default=10000)
     parser.add_argument('--weight' , type=str, help='project file that contains parameters')
-    parser.add_argument('--min_conf', type=float, default= 0.01, help='minimum confidence for an object to be detect')
-    parser.add_argument('--min_iou', type=float, default = 0.15, help='minimum iou threshold for non max suppression')
 
     args = parser.parse_args()
     config = Config(os.path.join('configs',args.config+'.yaml'))
