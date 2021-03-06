@@ -31,7 +31,7 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 from pycocotools.coco import COCO
-from pycocotools.cocoeval import COCOeval
+from my_cocoeval import MyCOCOeval as COCOeval
 
 parser = argparse.ArgumentParser("Evaluate COCO mAP")
 parser.add_argument("--gt_csv", type=str, help="path to ground truth csv file")
@@ -249,7 +249,7 @@ class mAPScore:
         coco_eval.params.imgIds = self.image_ids
 
         # Run at IOU=0.4
-        coco_eval.params.iouThrs = np.array([0.4])
+        coco_eval.params.iouThrs = np.array([0.1])
 
         # Some other params for COCO eval
         # imgIds = []
