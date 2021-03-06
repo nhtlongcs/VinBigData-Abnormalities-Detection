@@ -95,7 +95,10 @@ def to_submission(df, test_info, filename, round_to, use_trick, keep_ratio):
     def convert_entry_to_one_prediction_string(img_id, preds):
         # model does not predict anything for this image
         if len(preds) == 0:
-            return trick_string[img_id]
+            if use_trick:
+                return trick_string[img_id]
+            else:
+                return ""
         # model output contains only 14 x 0 0 1 1
         elif len(preds) == 1 and preds[0].startswith("14 "):
             conf = preds[0].split()[1]
