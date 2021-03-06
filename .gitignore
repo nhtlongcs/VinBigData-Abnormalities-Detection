@@ -4,7 +4,7 @@
 __pycache__/
 *.py[cod]
 *$py.class
-
+.vscode
 # C extensions
 *.so
 
@@ -164,3 +164,5 @@ fabric.properties
 /exported-models/
 /outputs/
 /data/
+
+temp

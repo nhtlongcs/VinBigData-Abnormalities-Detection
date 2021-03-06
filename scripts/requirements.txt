@@ -1,0 +1,8 @@
+scikit-learn
+scikit-multilearn
+pandas
+numpy
+tqdm
+matplotlib
+opencv-python
+ensemble_boxes
