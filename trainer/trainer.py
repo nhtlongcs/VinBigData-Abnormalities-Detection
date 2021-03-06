@@ -297,7 +297,7 @@ class Trainer():
     def set_attribute(self, kwargs):
         self.checkpoint = None
         self.scheduler = None
-        self.clip_grad = 10.0
+        self.clip_grad = None
         self.logger = None
         self.evaluate_per_epoch = 1
         self.visualize_when_val = True

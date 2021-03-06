@@ -64,11 +64,10 @@ def get_augmentation(config, _type='train'):
                                        p=0.3),            
         ], p=0.5),
 
-        A.OneOf([
-            A.HorizontalFlip(p=0.3),
-            A.VerticalFlip(p=0.3),
-            A.RandomRotate90(p=0.3),
-        ], p=0.3),
+       
+        A.HorizontalFlip(p=0.3),
+        A.VerticalFlip(p=0.3),
+        A.RandomRotate90(p=0.3),
         A.Normalize(mean=(0, 0, 0), std=(1, 1, 1), max_pixel_value=255.0, p=1.0),
         ToTensorV2(p=1.0)
     ], bbox_params=A.BboxParams(
