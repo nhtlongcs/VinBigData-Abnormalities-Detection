@@ -88,10 +88,16 @@ def train(args, config):
 
     optimizer, optimizer_params = get_lr_policy(config.lr_policy)
 
+    if config.mixed_precision:
+        scaler = NativeScaler()
+    else:
+        scaler = None
+
     model = Detector(
             n_classes=NUM_CLASSES,
             model = net,
             metrics=metric,
+            scaler=scaler,
             optimizer= optimizer,
             optim_params = optimizer_params,     
             device = device)
@@ -104,9 +110,10 @@ def train(args, config):
         init_weights(model.model)
         start_epoch, start_iter, best_value = 0, 0, 0.0
 
-    # One cycle lr-scheduler. Source: https://github.com/ultralytics/yolov5
-    lf = one_cycle(1, 0.158, config.num_epochs)  # cosine 1->hyp['lrf']
-    scheduler = torch.optim.lr_scheduler.LambdaLR(model.optimizer, lr_lambda=lf)
+    scheduler, step_per_epoch = get_lr_scheduler(
+        model.optimizer, 
+        opt_config=config.lr_scheduler,
+        num_epochs=config.num_epochs)
 
     trainer = Trainer(config,
                      model,
@@ -117,7 +124,8 @@ def train(args, config):
                      logger = Logger(log_dir=args.log_path),
                      scheduler = scheduler,
                      evaluate_per_epoch = args.val_interval,
-                     visualize_when_val = args.no_visualization)
+                     visualize_when_val = args.no_visualization,
+                     step_per_epoch = step_per_epoch)
     
     print("##########   DATASET INFO   ##########")
     print("Trainset: ")

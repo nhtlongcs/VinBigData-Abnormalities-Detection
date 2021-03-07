@@ -10,7 +10,6 @@ import time
 from utils.utils import change_box_order, draw_pred_gt_boxes
 from utils.postprocess import box_fusion
 from torch.cuda import amp
-from timm.utils import NativeScaler
 
 class Trainer():
     def __init__(self,
@@ -43,7 +42,7 @@ class Trainer():
         self.epoch = start_epoch
 
         # For one-cycle lr only
-        if self.scheduler is not None:
+        if self.scheduler is not None and self.step_per_epoch:
             self.scheduler.last_epoch = start_epoch - 1
 
         self.start_iter = start_iter % len(self.trainloader)
@@ -58,13 +57,13 @@ class Trainer():
                     if epoch % self.evaluate_per_epoch == 0 and epoch+1 >= self.evaluate_per_epoch:
                         self.evaluate_epoch()
                         
-          
-                if self.scheduler is not None:
+                lrl = [x['lr'] for x in self.optimizer.param_groups]
+                lr = sum(lrl) / len(lrl)
+                log_dict = {'Learning rate': lr}
+                self.logging(log_dict)
+
+                if self.scheduler is not None and self.step_per_epoch:
                     self.scheduler.step()
-                    lrl = [x['lr'] for x in self.optimizer.param_groups]
-                    lr = sum(lrl) / len(lrl)
-                    log_dict = {'Learning rate': lr}
-                    self.logging(log_dict)
                 
 
             except KeyboardInterrupt:   
@@ -85,11 +84,10 @@ class Trainer():
             
             start_time = time.time()
             
-            
             if self.use_amp:
                 with amp.autocast():
                     loss, loss_dict = self.model.training_step(batch)
-                self.scaler(loss, self.optimizer, clip_grad=self.clip_grad, parameters=self.model.parameters())
+                self.model.scaler(loss, self.optimizer, clip_grad=self.clip_grad, parameters=self.model.parameters())
             else:
                 loss, loss_dict = self.model.training_step(batch)
                 loss.backward()
@@ -101,10 +99,14 @@ class Trainer():
                 if (i+1) % self.accumulate_steps == 0 or i == len(self.trainloader)-1:
                     if not self.use_amp:
                         self.optimizer.step()
+                    if self.scheduler is not None and not self.step_per_epoch:
+                        self.scheduler.step()
                     self.optimizer.zero_grad()
             else:
                 if not self.use_amp:
                     self.optimizer.step()
+                if self.scheduler is not None and not self.step_per_epoch:
+                    self.scheduler.step()
                 self.optimizer.zero_grad()
 
             torch.cuda.synchronize()
@@ -132,7 +134,12 @@ class Trainer():
 
             if (self.iters % self.checkpoint.save_per_iter == 0 or self.iters == self.num_iters - 1):
                 print(f'Save model at [{self.epoch}|{self.iters}] to last.pth')
-                self.checkpoint.save(self.model, save_mode = 'last', epoch = self.epoch, iters = self.iters, best_value=self.best_value)
+                self.checkpoint.save(
+                    self.model, 
+                    save_mode = 'last', 
+                    epoch = self.epoch, 
+                    iters = self.iters, 
+                    best_value=self.best_value)
                 
 
     def inference_batch(self, testloader):
@@ -278,7 +285,7 @@ class Trainer():
         self.use_amp = False
         if self.cfg.mixed_precision:
             self.use_amp = True
-            self.scaler = NativeScaler()
+            
 
     def forward_test(self):
         self.model.eval()
@@ -299,6 +306,7 @@ class Trainer():
         self.scheduler = None
         self.clip_grad = None
         self.logger = None
+        self.step_per_epoch = False
         self.evaluate_per_epoch = 1
         self.visualize_when_val = True
         self.best_value = 0.0

@@ -40,6 +40,9 @@ class Checkpoint():
             'best_value': best_value
         }
 
+        if model.scaler is not None:
+            weights[model.scaler.state_dict_key] = model.scaler.state_dict()
+
         torch.save(weights, os.path.join(self.path,model_path)+".pth")
     
 def load_checkpoint(model, path):
@@ -58,6 +61,8 @@ def load_checkpoint(model, path):
     try:
         model.model.load_state_dict(state["model"])
         model.optimizer.load_state_dict(state["optimizer"])
+        if model.scaler is not None:
+            model.scaler.load_state_dict(state[model.scaler.state_dict_key])
     except KeyError:
         try:
             ret = model.model.load_state_dict(state, strict=False)
