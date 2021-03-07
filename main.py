@@ -126,14 +126,7 @@ class MyApp(QWidget):
         l_show.addWidget(w_imshow)
 
         self.sc = MplCanvas()
-        self.sc.axes[0].set_xticks([.0, .2, .4, .6, .8, 1.])
-        self.sc.axes[0].set_yticks([.0, .2, .4, .6, .8, 1.])
-        self.sc.axes[0].set_xlim(0, 1.1)
-        self.sc.axes[0].set_ylim(0, 1.1)
-
-        self.sc.axes[1].set_xticks([.0, .2, .4, .6, .8, 1.])
-        self.sc.axes[1].set_xlim(0, 1.1)
-        self.sc.axes[1].set_yticks(self.clsfilter)
+        self.format_plot()
         l_show.addWidget(self.sc)
 
         l_imview.addWidget(w_show)
@@ -288,6 +281,22 @@ class MyApp(QWidget):
         self.l_root.addWidget(w_imview)
         self.l_root.addWidget(w_cfg)
 
+    def format_plot(self):
+        self.sc.axes[0].cla()
+        self.sc.axes[1].cla()
+
+        self.sc.axes[0].set_title('P-R Curve')
+        self.sc.axes[0].set_xticks([.0, .2, .4, .6, .8, 1.])
+        self.sc.axes[0].set_yticks([.0, .2, .4, .6, .8, 1.])
+        self.sc.axes[0].set_xlim(0, 1.1)
+        self.sc.axes[0].set_ylim(0, 1.1)
+
+        self.sc.axes[1].set_title('Class AP')
+        self.sc.axes[1].set_xticks([.0, .2, .4, .6, .8, 1.])
+        self.sc.axes[1].set_yticks(list(range(14)))
+        self.sc.axes[1].set_xlim(0, 1.1)
+        self.sc.axes[1].set_ylim(-1, 14)
+
     def cbChecked_useann(self):
         self.useann = self.cb_useann.isChecked()
         self.drawBboxes()
@@ -370,8 +379,8 @@ class MyApp(QWidget):
                                                 "",
                                                 "CSV Files (*.csv)", options=options)
 
-        # if DEBUG:
-        #     picked = 'VinBigData-Abnormalities-Detection/data/raw/train.csv'
+        if DEBUG:
+            picked = 'VinBigData-Abnormalities-Detection/data/raw/folds/0/0_val.csv'
         if picked != '':
             self.reffn = picked
             self.w_reffn_txt.setText(os.path.basename(self.reffn))
@@ -461,8 +470,7 @@ class MyApp(QWidget):
             ]
 
             if self.useann and self.ann_df is not None:
-                self.sc.axes[0].cla()
-                self.sc.axes[1].cla()
+                self.format_plot()
                 aps = np.zeros(len(self.clsfilter))
                 for cid, c in enumerate(self.clsfilter):
                     pic = pred[pred['class_id'] == c]
@@ -498,25 +506,17 @@ class MyApp(QWidget):
                     TP = TP.cumsum()
                     FP = FP.cumsum()
                     FN = n_g - TP
-                    pre = np.nan_to_num(TP / (TP + FP))
-                    rec = np.nan_to_num(TP / (TP + FN))
-                    print(pre, rec)
+                    pre = np.nan_to_num(TP / (TP + FP + 1e-8))
+                    rec = np.nan_to_num(TP / (TP + FN + 1e-8))
 
                     aps[cid] = CalculateAveragePrecision(rec, pre)[0]
 
                     self.sc.axes[0].plot(rec, pre)
 
                 self.sc.axes[1].barh(self.clsfilter, aps, align='center')
-
-                self.sc.axes[0].set_xticks([.0, .2, .4, .6, .8, 1.])
-                self.sc.axes[0].set_yticks([.0, .2, .4, .6, .8, 1.])
-                self.sc.axes[0].set_xlim(0, 1.1)
-                self.sc.axes[0].set_ylim(0, 1.1)
-
-                self.sc.axes[1].set_xticks([.0, .2, .4, .6, .8, 1.])
-                self.sc.axes[1].set_xlim(0, 1.1)
-                self.sc.axes[1].set_yticks(self.clsfilter)
-
+                for i, (j, v) in enumerate(zip(self.clsfilter, aps)):
+                    if v > 0:
+                        self.sc.axes[1].text(v + .01, j - .33, f'{v:.2f}')
                 self.sc.draw()
         else:
             self.img.ref_bboxes = []
