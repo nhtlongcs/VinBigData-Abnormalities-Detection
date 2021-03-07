@@ -1,10 +1,18 @@
+from utils import iou_mat, CalculateAveragePrecision
 import os
+from matplotlib import pyplot as plt
 import numpy as np
 
 import pandas as pd
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, center
 from PyQt5.QtGui import QPaintEvent, QPainter, QPen, QPixmap
 from PyQt5.QtWidgets import QApplication, QCheckBox, QFileDialog, QGroupBox, QHBoxLayout, QLabel, QLineEdit, QPushButton, QScrollArea, QSlider, QVBoxLayout, QWidget
+
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg, NavigationToolbar2QT as NavigationToolbar
+from matplotlib.figure import Figure
+import seaborn as sns
+sns.set(font_scale=.6)
+
 
 DEBUG = False
 
@@ -21,42 +29,14 @@ def process_bbox(bb, nw, nh):
     return [bb.class_id, x_min, x_max, y_min, y_max]
 
 
-def intersection_over_union(boxA, boxB):
-    # determine the (x, y)-coordinates of the intersection rectangle
-    xA = max(boxA[0], boxB[0])
-    yA = max(boxA[1], boxB[1])
-    xB = min(boxA[2], boxB[2])
-    yB = min(boxA[3], boxB[3])
-
-    # compute the area of intersection rectangle
-    interArea = abs(max((xB - xA, 0)) * max((yB - yA), 0))
-    if interArea == 0:
-        return 0
-    # compute the area of both the prediction and ground-truth
-    # rectangles
-    boxAArea = abs((boxA[2] - boxA[0]) * (boxA[3] - boxA[1]))
-    boxBArea = abs((boxB[2] - boxB[0]) * (boxB[3] - boxB[1]))
-
-    # compute the intersection over union by taking the intersection
-    # area and dividing it by the sum of prediction + ground-truth
-    # areas - the interesection area
-    iou = interArea / float(boxAArea + boxBArea - interArea)
-
-    # return the intersection over union value
-    return iou
-
-
-def iou_mat(A, B):
-    n_i = len(A)
-    n_j = len(B)
-    iou_mat = np.empty((n_i, n_j))
-    for i in range(n_i):
-        for j in range(n_j):
-            iou_mat[i, j] = intersection_over_union(A[i], B[j])
-    return iou_mat
-
-
 COORD_LABELS = ['x_min', 'y_min', 'x_max', 'y_max']
+
+
+class MplCanvas(FigureCanvasQTAgg):
+    def __init__(self, parent=None, width=5, height=4, dpi=100):
+        fig, self.axes = plt.subplots(2, 1)
+        plt.subplots_adjust(hspace=0.5)
+        super(MplCanvas, self).__init__(fig)
 
 
 class ImageView(QLabel):
@@ -97,7 +77,7 @@ class MyApp(QWidget):
         super().__init__()
         self.setFixedSize(1280, 720)
 
-        self.imlist = []
+        self.imlist = None
         self.im_id = 0
         self.imdir = ''
 
@@ -136,14 +116,27 @@ class MyApp(QWidget):
 
         # ====>
 
+        w_show = QWidget()
+        l_show = QHBoxLayout(w_show)
+
         w_imshow = QScrollArea(self)
-        w_imshow.setFixedWidth(950)
-
+        w_imshow.setFixedWidth(600)
         self.img = ImageView()
-
         w_imshow.setWidget(self.img)
+        l_show.addWidget(w_imshow)
 
-        l_imview.addWidget(w_imshow)
+        self.sc = MplCanvas()
+        self.sc.axes[0].set_xticks([.0, .2, .4, .6, .8, 1.])
+        self.sc.axes[0].set_yticks([.0, .2, .4, .6, .8, 1.])
+        self.sc.axes[0].set_xlim(0, 1.1)
+        self.sc.axes[0].set_ylim(0, 1.1)
+
+        self.sc.axes[1].set_xticks([.0, .2, .4, .6, .8, 1.])
+        self.sc.axes[1].set_xlim(0, 1.1)
+        self.sc.axes[1].set_yticks(self.clsfilter)
+        l_show.addWidget(self.sc)
+
+        l_imview.addWidget(w_show)
 
         # ====>
 
@@ -175,7 +168,7 @@ class MyApp(QWidget):
         # ======= Configuration =======
 
         w_cfg = QWidget()
-        w_cfg.setFixedWidth(275)
+        w_cfg.setFixedWidth(250)
 
         l_cfg = QVBoxLayout()
         w_cfg.setLayout(l_cfg)
@@ -323,7 +316,12 @@ class MyApp(QWidget):
         if picked != '':
             self.imdir = picked
             self.w_imdir_txt.setText(self.imdir)
-            self.imlist = list(filter(check_im_file, os.listdir(self.imdir)))
+            self.init_imlist = pd.Series(
+                filter(check_im_file, os.listdir(self.imdir))
+            )
+            self.imlist = pd.Series(
+                filter(check_im_file, os.listdir(self.imdir))
+            )
 
             self.im_id = 0
             self.notify_imid_changed()
@@ -372,8 +370,8 @@ class MyApp(QWidget):
                                                 "",
                                                 "CSV Files (*.csv)", options=options)
 
-        if DEBUG:
-            picked = 'VinBigData-Abnormalities-Detection/data/raw/train.csv'
+        # if DEBUG:
+        #     picked = 'VinBigData-Abnormalities-Detection/data/raw/train.csv'
         if picked != '':
             self.reffn = picked
             self.w_reffn_txt.setText(os.path.basename(self.reffn))
@@ -391,10 +389,17 @@ class MyApp(QWidget):
             self.ref_df.y_min /= self.ref_df.height
             self.ref_df.y_max /= self.ref_df.height
 
+            t = self.init_imlist.apply(lambda x: x.split('.')[0])
+            self.imlist = self.init_imlist[
+                t.isin(self.ref_df['image_id'].values)
+            ]
+            self.im_id = 0
+            self.notify_imid_changed()
+
     def notify_imid_changed(self):
         self.w_impick_idtxt.setText(str(self.im_id))
-        self.w_impick_fntxt.setText(self.imlist[self.im_id])
-        self.setImage(self.imdir + '/' + self.imlist[self.im_id])
+        self.w_impick_fntxt.setText(self.imlist.values[self.im_id])
+        self.setImage(self.imdir + '/' + self.imlist.values[self.im_id])
 
         self.drawBboxes()
 
@@ -431,7 +436,7 @@ class MyApp(QWidget):
         if self.imlist is None or self.meta_df is None:
             return
 
-        pid = os.path.splitext(self.imlist[self.im_id])[0]
+        pid = os.path.splitext(self.imlist.values[self.im_id])[0]
         nw, nh = self.img.width(), self.img.height()
 
         if self.useann and self.ann_df is not None:
@@ -455,18 +460,64 @@ class MyApp(QWidget):
                 for _, bb in gt.iterrows()
             ]
 
-            if False:
-                p = pred[COORD_LABELS].values
-                g = gt[COORD_LABELS].values
-                ious = iou_mat(p, g)
+            if self.useann and self.ann_df is not None:
+                self.sc.axes[0].cla()
+                self.sc.axes[1].cla()
+                aps = np.zeros(len(self.clsfilter))
+                for cid, c in enumerate(self.clsfilter):
+                    pic = pred[pred['class_id'] == c]
+                    gic = gt[gt['class_id'] == c]
+                    ious = iou_mat(pic[COORD_LABELS].values,
+                                   gic[COORD_LABELS].values)
 
-                ii, _ = np.where(ious > 0.4)
+                    score_sort_indices = np.argsort(-pic['score'].values)
+                    sorted_ious = ious[score_sort_indices]
 
-                self.img.ann_bboxes = [
-                    process_bbox(bb, nw, nh)
-                    for i, (_, bb) in enumerate(pred.iterrows())
-                    if i in ii
-                ]
+                    n_p, n_g = ious.shape
+
+                    TP, FP = np.zeros(n_p), np.zeros(n_p)
+                    lst_TP_g = []
+                    lst_TP_p = []
+
+                    for i in range(n_p):
+                        if n_g == 0:
+                            FP[i] = 1
+                        else:
+                            best_iou = sorted_ious[i].max()
+                            best_iou_gid = sorted_ious[i].argmax()
+                            if best_iou > 0.4:
+                                if best_iou_gid in lst_TP_g:
+                                    FP[i] = 1
+                                else:
+                                    TP[i] += 1
+                                    lst_TP_g.append(best_iou_gid)
+                                    lst_TP_p.append(score_sort_indices[i])
+                            else:
+                                FP[i] = 1
+
+                    TP = TP.cumsum()
+                    FP = FP.cumsum()
+                    FN = n_g - TP
+                    pre = np.nan_to_num(TP / (TP + FP))
+                    rec = np.nan_to_num(TP / (TP + FN))
+                    print(pre, rec)
+
+                    aps[cid] = CalculateAveragePrecision(rec, pre)[0]
+
+                    self.sc.axes[0].plot(rec, pre)
+
+                self.sc.axes[1].barh(self.clsfilter, aps, align='center')
+
+                self.sc.axes[0].set_xticks([.0, .2, .4, .6, .8, 1.])
+                self.sc.axes[0].set_yticks([.0, .2, .4, .6, .8, 1.])
+                self.sc.axes[0].set_xlim(0, 1.1)
+                self.sc.axes[0].set_ylim(0, 1.1)
+
+                self.sc.axes[1].set_xticks([.0, .2, .4, .6, .8, 1.])
+                self.sc.axes[1].set_xlim(0, 1.1)
+                self.sc.axes[1].set_yticks(self.clsfilter)
+
+                self.sc.draw()
         else:
             self.img.ref_bboxes = []
 
