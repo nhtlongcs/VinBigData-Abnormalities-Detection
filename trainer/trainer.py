@@ -57,13 +57,12 @@ class Trainer():
                     if epoch % self.evaluate_per_epoch == 0 and epoch+1 >= self.evaluate_per_epoch:
                         self.evaluate_epoch()
                         
-                lrl = [x['lr'] for x in self.optimizer.param_groups]
-                lr = sum(lrl) / len(lrl)
-                log_dict = {'Learning rate': lr}
-                self.logging(log_dict)
-
                 if self.scheduler is not None and self.step_per_epoch:
                     self.scheduler.step()
+                    lrl = [x['lr'] for x in self.optimizer.param_groups]
+                    lr = sum(lrl) / len(lrl)
+                    log_dict = {'Learning rate/Epoch': lr}
+                    self.logging(log_dict)
                 
 
             except KeyboardInterrupt:   
@@ -106,7 +105,12 @@ class Trainer():
                 if not self.use_amp:
                     self.optimizer.step()
                 if self.scheduler is not None and not self.step_per_epoch:
-                    self.scheduler.step()
+                    # self.scheduler.step()
+                    self.scheduler.step(self.num_epochs + i / len(self.trainloader))
+                    lrl = [x['lr'] for x in self.optimizer.param_groups]
+                    lr = sum(lrl) / len(lrl)
+                    log_dict = {'Learning rate/Iterations': lr}
+                    self.logging(log_dict)
                 self.optimizer.zero_grad()
 
             torch.cuda.synchronize()

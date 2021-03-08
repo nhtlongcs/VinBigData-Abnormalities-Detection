@@ -15,7 +15,7 @@ from torch.utils.data import DataLoader
 from utils.utils import init_weights, one_cycle
 import torchvision.models as models
 from torch.optim import SGD, AdamW
-from torch.optim.lr_scheduler import StepLR, CosineAnnealingLR, LambdaLR, ReduceLROnPlateau,OneCycleLR
+from torch.optim.lr_scheduler import StepLR, CosineAnnealingLR, LambdaLR, ReduceLROnPlateau,OneCycleLR, CosineAnnealingWarmRestarts
 from timm.utils import NativeScaler
 
 from .random_seed import seed_everything
@@ -84,6 +84,18 @@ def get_lr_scheduler(optimizer, opt_config, **kwargs):
             eps=1e-08
         )
         step_per_epoch = True
+
+    elif scheduler_name == 'cosine':
+        scheduler = CosineAnnealingWarmRestarts(
+            optimizer,
+            T_0=50,
+            T_mult=1,
+            eta_min=0.0001,
+            last_epoch=-1,
+            verbose=False
+        )
+        step_per_epoch = False
+
 
 
     return scheduler, step_per_epoch

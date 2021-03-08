@@ -109,7 +109,7 @@ def train(args, config):
         print('Not resume. Initialize weights')
         init_weights(model.model)
         start_epoch, start_iter, best_value = 0, 0, 0.0
-
+        
     scheduler, step_per_epoch = get_lr_scheduler(
         model.optimizer, 
         opt_config=config.lr_scheduler,
