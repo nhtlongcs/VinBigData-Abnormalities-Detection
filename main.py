@@ -14,7 +14,8 @@ import seaborn as sns
 sns.set(font_scale=.6)
 
 
-DEBUG = False
+DEBUG = True
+COLORS = np.random.random(size=(14, 3))
 
 
 def check_im_file(x):
@@ -241,13 +242,23 @@ class MyApp(QWidget):
         l_conf = QVBoxLayout()
         w_conf.setLayout(l_conf)
 
-        self.txt_conf = QLabel('Confidence threshold: 0.5')
-        l_conf.addWidget(self.txt_conf)
+        w_conf_lbltxt = QWidget()
+        l_conf_lbltxt = QHBoxLayout(w_conf_lbltxt)
+
+        txt_conf = QLabel('Confidence threshold:')
+        l_conf_lbltxt.addWidget(txt_conf)
+
+        self.w_conf_txt = QLineEdit('0.5')
+        self.w_conf_txt.setFixedWidth(50)
+        self.w_conf_txt.returnPressed.connect(self.txtEdited_conf_txt)
+        l_conf_lbltxt.addWidget(self.w_conf_txt)
+
+        l_conf.addWidget(w_conf_lbltxt)
 
         self.sl_conf = QSlider(Qt.Horizontal)
         self.sl_conf.setMinimum(0)
-        self.sl_conf.setMaximum(1000)
-        self.sl_conf.setValue(500)
+        self.sl_conf.setMaximum(10000)
+        self.sl_conf.setValue(5000)
         self.sl_conf.setTickInterval(1)
         self.sl_conf.valueChanged.connect(self.slEdited_conf)
         l_conf.addWidget(self.sl_conf)
@@ -321,7 +332,7 @@ class MyApp(QWidget):
         picked = QFileDialog.getExistingDirectory(self, 'Select Folder')
 
         if DEBUG:
-            picked = 'VinBigData-Abnormalities-Detection/data/vinbigdata-512/train'
+            picked = 'data/train'
         if picked != '':
             self.imdir = picked
             self.w_imdir_txt.setText(self.imdir)
@@ -346,7 +357,7 @@ class MyApp(QWidget):
                                                 "CSV Files (*.csv)", options=options)
 
         if DEBUG:
-            picked = 'VinBigData-Abnormalities-Detection/data/meta/train_info.csv'
+            picked = 'data/meta/train_info.csv'
         if picked != '':
             self.metafn = picked
             self.w_metafn_txt.setText(os.path.basename(self.metafn))
@@ -380,7 +391,7 @@ class MyApp(QWidget):
                                                 "CSV Files (*.csv)", options=options)
 
         if DEBUG:
-            picked = 'VinBigData-Abnormalities-Detection/data/raw/folds/0/0_val.csv'
+            picked = 'data/raw/folds/0/0_val.csv'
         if picked != '':
             self.reffn = picked
             self.w_reffn_txt.setText(os.path.basename(self.reffn))
@@ -413,8 +424,8 @@ class MyApp(QWidget):
         self.drawBboxes()
 
     def notify_conf_changed(self):
-        self.txt_conf.setText(f'Confidence threshold: {self.conf}')
-
+        self.w_conf_txt.setText(f'{self.conf:.4f}')
+        self.sl_conf.setValue(int(self.conf * self.sl_conf.maximum()))
         self.drawBboxes()
 
     def notify_clsfilter_changed(self):
@@ -429,6 +440,15 @@ class MyApp(QWidget):
         if self.im_id < len(self.imlist) - 1:
             self.im_id += 1
             self.notify_imid_changed()
+
+    def txtEdited_conf_txt(self):
+        try:
+            new_conf = float(self.w_conf_txt.text())
+            if 0 <= new_conf <= 1:
+                self.conf = new_conf
+        except:
+            print('Not a float!')
+        self.notify_conf_changed()
 
     def txtEdited_impick_id_txt(self):
         if self.w_impick_idtxt.text().isdigit():
@@ -511,8 +531,12 @@ class MyApp(QWidget):
 
                     aps[cid] = CalculateAveragePrecision(rec, pre)[0]
 
-                    self.sc.axes[0].plot(rec, pre)
+                    plt_lbl = f'{cid}' if aps[cid] > 0 else None
+                    self.sc.axes[0].plot(rec, pre,
+                                         label=plt_lbl,
+                                         color=COLORS[c])
 
+                self.sc.axes[0].legend()
                 self.sc.axes[1].barh(self.clsfilter, aps, align='center')
                 for i, (j, v) in enumerate(zip(self.clsfilter, aps)):
                     if v > 0:
