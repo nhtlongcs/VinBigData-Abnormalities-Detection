@@ -26,6 +26,7 @@ class CocoDataset(Dataset):
         self.mixup = config.mixup
         self.cutmix = config.cutmix
         self.resize_transforms = get_resize_augmentation(config.image_size, config.keep_ratio, box_transforms=True)
+
         self.mode = 'xyxy' # Output format of the __getitem__
         self.inference = inference
         self.train = train
@@ -93,7 +94,7 @@ class CocoDataset(Dataset):
                     image, boxes, labels, img_id, img_name = self.load_cutmix_image_and_boxes(idx, self.image_size)
                 else:
                     image, boxes, labels, img_id, img_name = self.load_image_and_boxes(idx)
-        # image = image.astype(np.uint8)
+        image = image.astype(np.uint8)
         if self.transforms:
             item = self.transforms(image=image, bboxes=boxes, class_labels=labels)
             # Normalize
@@ -144,8 +145,10 @@ class CocoDataset(Dataset):
         image_info = self.coco.loadImgs(self.image_ids[image_index])[0]
         path = os.path.join(self.root_dir, image_info['file_name'])
         
+        
         image = cv2.imread(path)
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+
         return image, image_info['file_name']
 
     def load_annotations(self, image_index):
