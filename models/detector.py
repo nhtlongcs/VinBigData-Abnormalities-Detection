@@ -46,7 +46,7 @@ class Detector(BaseModel):
         return loss, loss_dict
 
     
-    def inference_step(self, batch, conf_threshold = 0.2, iou_threshold=0):
+    def inference_step(self, batch, conf_threshold = 0.001, iou_threshold=0.5):
         inputs = batch["imgs"]
         img_sizes = batch['img_sizes']
         img_scales = batch['img_scales']

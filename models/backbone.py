@@ -40,7 +40,7 @@ class EfficientDetBackbone(nn.Module):
     def forward(self, inputs, targets):
         return self.model(inputs, targets)
 
-    def detect(self, inputs, img_sizes, img_scales, conf_threshold=0.2):
+    def detect(self, inputs, img_sizes, img_scales, conf_threshold=0.001):
         outputs = self.model(inputs, inference=True, img_sizes=img_sizes, img_scales=img_scales)
         outputs = outputs.cpu().numpy()
         out = []
