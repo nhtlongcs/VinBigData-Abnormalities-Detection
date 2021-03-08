@@ -7,14 +7,14 @@ import json
 import torch
 from torch import nn
 from torch.utils.data import Dataset, DataLoader
-from utils.utils import box_nms_numpy, draw_boxes_v2, change_box_order
+from utils.utils import draw_boxes_v2, change_box_order
 import pandas as pd
 from tqdm import tqdm
 import albumentations as A
 from albumentations.pytorch.transforms import ToTensorV2
 from augmentations.transforms import get_resize_augmentation
 
-BATCH_SIZE = 4
+BATCH_SIZE = 16
 
 class TestDataset(Dataset):
     def __init__(self, config, test_df, transforms=None):
@@ -94,7 +94,7 @@ def main(args, config):
         if not os.path.exists(args.output_path):
             os.makedirs(args.output_path)
 
-    test_df = pd.read_csv('/content/main/datasets/test_info.csv')
+    test_df = pd.read_csv('./datasets/test_info.csv')
     test_transforms = A.Compose([
         A.Resize(
             height = config.image_size[1],
@@ -157,7 +157,7 @@ def main(args, config):
                     
                     boxes = boxes[indexes]
                     scores = scores[indexes]
-                    classes = classes[indexes]
+                    labels = labels[indexes]
 
                     if len(boxes) == 0:
                         empty_imgs += 1
@@ -202,9 +202,9 @@ def main(args, config):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Inference AIC Challenge Dataset')
-    parser.add_argument('--min_conf', type=float, default= 0.2, help='minimum confidence for an object to be detect')
-    parser.add_argument('--min_iou', type=float, default=0.15, help='minimum iou threshold for non max suppression')
-    parser.add_argument('-c', type=int, default = 2, help='version of EfficentDet')
+    parser.add_argument('--min_conf', type=float, default= 0.001, help='minimum confidence for an object to be detect')
+    parser.add_argument('--min_iou', type=float, default=0.5, help='minimum iou threshold for non max suppression')
+    parser.add_argument('-c', type=int, default = 4, help='version of EfficentDet')
     parser.add_argument('--weight', type=str, default = 'weights/efficientdet-d2.pth',help='version of EfficentDet')
     parser.add_argument('--output_path', type=str, default = None, help='name of output to .avi file')
     parser.add_argument('--submission', action='store_true', default = False, help='output to submission file')
