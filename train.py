@@ -54,8 +54,6 @@ def train(args, config):
         num_workers= config.num_workers, 
         pin_memory=True)
 
-    NUM_CLASSES = len(config.obj_list)
-
     net = get_model(args, config)
 
     if args.saved_path is not None:
@@ -88,7 +86,6 @@ def train(args, config):
         scaler = None
 
     model = Detector(
-            n_classes=NUM_CLASSES,
             model = net,
             metrics=metric,
             scaler=scaler,
