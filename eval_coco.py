@@ -56,16 +56,9 @@ def main(args, config):
         max_images=config.max_images_val,
         mode=config.fusion_mode)
 
-    NUM_CLASSES = len(config.obj_list)
-
     net = get_model(args, config)
 
-    model = Detector(
-                    n_classes=NUM_CLASSES,
-                    model = net,
-                    optimizer= torch.optim.AdamW,
-                    optim_params = {'lr': 0.1},     
-                    device = device)
+    model = Detector(model = net, device = device)
     model.eval()
 
     if args.weight is not None:                
