@@ -7,10 +7,7 @@ from torch import nn
 
 from .effdet import get_efficientdet_config, EfficientDet, DetBenchTrain
 from .effdet.efficientdet import HeadNet
-
-from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
-from torchvision.models.detection import FasterRCNN
-from torchvision.models.detection.rpn import AnchorGenerator
+from .frcnn import create_fasterrcnn_fpn
 
 def get_model(args, config):
     NUM_CLASSES = len(config.obj_list)
@@ -33,7 +30,12 @@ def get_model(args, config):
             pretrained_backbone_path=config.pretrained_backbone,
             image_size=config.image_size)
     elif config.model_name.startswith('fasterrcnn'):
-        raise NotImplementedError
+        backbone_name = config.model_name.split('-')[1]
+        net = FRCNNBackbone(
+            backbone_name=backbone_name,
+            num_classes=NUM_CLASSES, 
+            pretrained=True
+        )
     return net
 
 class BaseBackbone(nn.Module):
@@ -115,3 +117,59 @@ class EfficientDetBackbone(BaseBackbone):
 
         return out
     
+class FRCNNBackbone(BaseBackbone):
+    def __init__(
+        self, 
+        backbone_name,
+        num_classes=80, 
+        pretrained=False,
+        **kwargs):
+
+        super(FRCNNBackbone, self).__init__(**kwargs)
+        self.name = f'fasterrcnn-{backbone_name}'
+        self.model = create_fasterrcnn_fpn(backbone_name,pretrained=pretrained, num_classes=num_classes)
+        self.num_classes = num_classes
+
+    def forward(self, batch, device):
+        self.model.train()
+        inputs = batch["imgs"]
+        targets = batch['targets']
+
+        inputs = list(image.to(device) for image in inputs)
+        targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
+
+        loss_dict = self.model(inputs, targets)
+        loss_dict = {k:v.mean() for k,v in loss_dict.items()}
+        loss = sum(loss for loss in loss_dict.values())
+        ret_loss_dict = {
+            'C': loss_dict['loss_classifier'],
+            'B': loss_dict['loss_box_reg'],
+            'O': loss_dict['loss_objectness'],
+            'RPN': loss_dict['loss_rpn_box_reg'],
+            'T': loss
+        }
+        return ret_loss_dict
+
+    def detect(self, batch, device):
+        inputs = batch["imgs"]
+        inputs = list(image.to(device) for image in inputs)
+        outputs =  self.model(inputs)
+        out = []
+        for i, output in enumerate(outputs):
+            boxes = output['boxes'].data.cpu().numpy()
+            labels = output['labels'].data.cpu().numpy()
+            scores = output['scores'].data.cpu().numpy()
+            if len(boxes) > 0:
+                out.append({
+                    'bboxes': boxes,
+                    'classes': labels,
+                    'scores': scores,
+                })
+            else:
+                out.append({
+                    'bboxes': np.array(()),
+                    'classes': np.array(()),
+                    'scores': np.array(()),
+                })
+
+        return out
