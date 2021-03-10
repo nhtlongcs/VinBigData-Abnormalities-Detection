@@ -123,20 +123,27 @@ class mAPScores(TemplateMetric):
                         pred = preds[i]
 
                         if self.retransforms is not None:
-                            bbox_xywh = pred['bboxes']
+                            boxes = pred['bboxes']
                         else:
-                            bbox_xywh = pred['bboxes']
+                            boxes = pred['bboxes']
                         
-                        if bbox_xywh is None or len(bbox_xywh) == 0:
+                        labels = pred['classes']  
+                        scores = pred['scores']
+
+                        indexes = np.where(scores > self.min_conf)[0]
+                        
+                        boxes = boxes[indexes]
+                        scores = scores[indexes]
+                        labels = labels[indexes]
+
+                        if boxes is None or len(boxes) == 0:
                             empty_imgs += 1
                         else:
-                            bbox_xywh = change_box_order(bbox_xywh, order='xyxy2xywh')
-                            cls_ids = pred['classes']
-                            cls_conf = pred['scores']
-                            for i in range(bbox_xywh.shape[0]):
-                                score = float(cls_conf[i])
-                                label = int(cls_ids[i])
-                                box = bbox_xywh[i, :]
+                            boxes = change_box_order(boxes, order='xyxy2xywh')
+                            for i in range(boxes.shape[0]):
+                                score = float(scores[i])
+                                label = int(labels[i])
+                                box = boxes[i, :]
                                 image_result = {
                                     'image_id': image_id,
                                     'category_id': label,

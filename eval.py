@@ -197,7 +197,7 @@ def main(args, config):
 
         if args.submission:
             submission_df = pd.DataFrame(results, columns=['image_id', 'class_id', 'score', 'x_min', 'y_min' , 'x_max', 'y_max'])
-            submission_df.to_csv('results/output.csv', index=False)
+            submission_df.to_csv('results/output_tta.csv', index=False)
 
 
 if __name__ == '__main__':

@@ -99,11 +99,12 @@ class TTA():
         self.min_iou = min_iou
         self.postprocess_fn = box_fusion
 
-        self.tta_transforms = []
-        for tta_combination in product([TTAHorizontalFlip(), None], 
-                                    [TTAVerticalFlip(), None],
-                                    [TTARotate90(), None]):
-            self.tta_transforms.append(TTACompose([tta_transform for tta_transform in tta_combination if tta_transform]))
+        # self.tta_transforms = []
+        # for tta_combination in product([TTAHorizontalFlip(), None], 
+        #                             [TTAVerticalFlip(), None],
+        #                             [TTARotate90(), None]):
+        #     self.tta_transforms.append(TTACompose([tta_transform for tta_transform in tta_combination if tta_transform]))
+        self.tta_transforms = [None, TTAHorizontalFlip(), TTAVerticalFlip(), TTARotate90()]
 
     def make_tta_predictions(self, model, batch, weights = None):
         
@@ -111,8 +112,9 @@ class TTA():
         batch_size = batch['imgs'].shape[0]
         image_size = batch['imgs'].shape[-1]
         for tta_transform in self.tta_transforms:
-            for single_transform in tta_transform.transforms:
-                single_transform.image_size = int(image_size)
+            if tta_transform is not None:
+                for single_transform in tta_transform.transforms:
+                    single_transform.image_size = int(image_size)
 
             
         final_outputs = []
@@ -124,7 +126,11 @@ class TTA():
             }
             for aug_idx, tta_transform in enumerate(self.tta_transforms):
                 imgs = batch['imgs']
-                tta_imgs = tta_transform.batch_augment(imgs.clone())
+                if tta_transform is not None:
+                    tta_imgs = tta_transform.batch_augment(imgs.clone())
+                else:
+                    tta_imgs = imgs.clone()
+
                 tta_batch = {
                     'imgs': tta_imgs, 
                     'img_sizes': batch['img_sizes'],
