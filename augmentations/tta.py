@@ -137,7 +137,7 @@ class TTA():
                     'img_scales': batch['img_scales']}
 
                 #  Feed imgs through model
-                outputs = model.inference_step(tta_batch, conf_threshold = self.min_conf, iou_threshold = self.min_iou)
+                outputs = model.inference_step(tta_batch)
                 
                 for i, output in enumerate(outputs):
 
