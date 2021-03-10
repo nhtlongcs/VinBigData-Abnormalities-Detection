@@ -8,6 +8,7 @@ import torch
 from torch import nn
 from torch.utils.data import Dataset, DataLoader
 from utils.utils import draw_boxes_v2, change_box_order
+from utils.postprocess import box_fusion, postprocessing
 import pandas as pd
 from tqdm import tqdm
 import albumentations as A
@@ -115,11 +116,7 @@ def main(args, config):
     else:
         config.tta = None
 
-    net = EfficientDetBackbone(
-        num_classes=NUM_CLASSES, 
-        compound_coef=args.c, 
-        load_weights=False, 
-        image_size=config.image_size)
+    net = get_model(args, config)
 
     model = Detector(
                     n_classes=NUM_CLASSES,
@@ -149,21 +146,22 @@ def main(args, config):
                     # img_ori_ws = batch['image_ori_ws'][idx]
                     # img_ori_hs = batch['image_ori_hs'][idx]
                     
+                    outputs = postprocessing(
+                        outputs, 
+                        current_img_size=[img_w, img_h],
+                        ori_img_size=[img_w, img_h],
+                        min_iou=config.min_iou_val,
+                        min_conf=config.min_conf_val,
+                        mode=config.fusion_mode)
+
                     boxes = outputs['bboxes'] 
                     labels = outputs['classes']  
                     scores = outputs['scores']
 
-                    indexes = np.where(scores > config.min_conf_val)[0]
-                    
-                    boxes = boxes[indexes]
-                    scores = scores[indexes]
-                    labels = labels[indexes]
-
                     if len(boxes) == 0:
                         empty_imgs += 1
                         boxes = None
-                    else:
-                        boxes = change_box_order(boxes, order='xyxy2xywh')
+
                     if boxes is not None:
                         if args.output_path is not None:
                             out_path = os.path.join(args.output_path, f'{img_id}.png')
@@ -197,18 +195,17 @@ def main(args, config):
 
         if args.submission:
             submission_df = pd.DataFrame(results, columns=['image_id', 'class_id', 'score', 'x_min', 'y_min' , 'x_max', 'y_max'])
-            submission_df.to_csv('results/output_tta.csv', index=False)
+            submission_df.to_csv('results/output.csv', index=False)
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Inference AIC Challenge Dataset')
+    parser.add_argument('config', type=str, default = None,help='save detection at')
     parser.add_argument('--min_conf', type=float, default= 0.001, help='minimum confidence for an object to be detect')
     parser.add_argument('--min_iou', type=float, default=0.5, help='minimum iou threshold for non max suppression')
-    parser.add_argument('-c', type=int, default = 4, help='version of EfficentDet')
     parser.add_argument('--weight', type=str, default = 'weights/efficientdet-d2.pth',help='version of EfficentDet')
     parser.add_argument('--output_path', type=str, default = None, help='name of output to .avi file')
     parser.add_argument('--submission', action='store_true', default = False, help='output to submission file')
-    parser.add_argument('--config', type=str, default = None,help='save detection at')
 
     args = parser.parse_args() 
     config = Config(os.path.join('configs',args.config+'.yaml'))                   

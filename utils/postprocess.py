@@ -7,6 +7,7 @@ import webcolors
 import cv2
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
+from .utils import change_box_order
 from ensemble_boxes import weighted_boxes_fusion, nms
 
 def filter_area(boxes, confidence_score, labels, min_area=10):
@@ -30,19 +31,55 @@ def filter_area(boxes, confidence_score, labels, min_area=10):
 
     return np.array(picked_boxes), np.array(picked_score), np.array(picked_classes)
 
-def postprocessing(outs, imgs, retransforms = None, out_format='xyxy'):
-    for item in outs:
-        
-        boxes_out = item['bboxes']
-        if len(boxes_out) == 0:
-            continue
-        boxes_out_xywh = change_box_order(boxes_out, order = 'xyxy2xywh')
-        new_boxes = retransforms(img = imgs, box=boxes_out_xywh)['box']
-        if out_format == 'xyxy':
-            new_boxes = change_box_order(new_boxes, order = 'xywh2xyxy')
-        item['bboxes'] = new_boxes
+def resize_postprocessing(boxes, current_img_size, ori_img_size):
+    """
+    Boxes format xyxy or xywh
+    """
+    new_boxes = boxes.copy()
+    new_boxes[:,[0, 2]] = (boxes[:,[0, 2]] * ori_img_size[0])/ current_img_size[0]
+    new_boxes[:,[1, 3]] = (boxes[:,[1, 3]] * ori_img_size[1])/ current_img_size[1]
+    return new_boxes
 
-    return outs
+def postprocessing(
+        preds, 
+        current_img_size=None,  # Need to be square
+        ori_img_size=None,
+        min_iou=0.5, 
+        min_conf=0.1,
+        mode=None,
+        output_format='xywh'):
+    """
+    Input: bounding boxes in xyxy format
+    Output: bounding boxes in xywh format
+    """
+    boxes, scores, labels = preds['bboxes'], preds['scores'], preds['classes']
+    if len(boxes) != 0:
+        if mode is not None:
+            boxes, scores, labels = box_fusion(
+                [boxes],
+                [scores],
+                [labels],
+                image_size=current_img_size[0],
+                mode=mode,
+                iou_threshold=min_iou)
+
+        indexes = np.where(scores > min_conf)[0]
+        
+        boxes = boxes[indexes]
+        scores = scores[indexes]
+        labels = labels[indexes]
+
+    if ori_img_size is not None and current_img_size is not None:
+        boxes = resize_postprocessing(boxes, current_img_size=current_img_size, ori_img_size=ori_img_size)
+
+    if output_format == 'xywh':
+        boxes = change_box_order(boxes, order='xyxy2xywh')
+
+
+    return {
+        'bboxes': boxes, 
+        'scores': scores, 
+        'classes': labels}
 
 def box_fusion(
     bounding_boxes, 

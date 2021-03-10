@@ -8,7 +8,7 @@ from loggers.loggers import Logger
 from utils.utils import clip_gradient
 import time
 from utils.utils import change_box_order, draw_pred_gt_boxes
-from utils.postprocess import box_fusion
+from utils.postprocess import box_fusion, postprocessing
 from torch.cuda import amp
 
 class Trainer():
@@ -225,6 +225,7 @@ class Trainer():
 
             image_names = batch['img_names']
             imgs = batch['imgs']
+            img_sizes = batch['img_sizes']
 
             if self.cfg.tta is not None:
                 outputs = self.cfg.tta.make_tta_predictions(self.model, batch)
@@ -233,19 +234,21 @@ class Trainer():
 
             for idx in range(len(outputs)):
                 img = imgs[idx]
+                img_size = img_sizes[idx]
                 image_name = image_names[idx]
                 image_outname = os.path.join('samples', f'{self.epoch}_{self.iters}_{idx}.jpg')
 
-                pred = outputs[idx]
+                pred = postprocessing(
+                        outputs[idx], 
+                        current_img_size=self.cfg.image_size,
+                        ori_img_size=self.cfg.image_size,
+                        min_iou=self.cfg.min_iou_val,
+                        min_conf=self.cfg.min_conf_val,
+                        mode=self.cfg.fusion_mode)
+
                 boxes = pred['bboxes']
                 labels = pred['classes']
                 scores = pred['scores']
-
-                indexes = np.where(scores > self.cfg.min_conf_val)[0]
-                    
-                boxes = boxes[indexes]
-                scores = scores[indexes]
-                labels = labels[indexes]
 
                 target = targets[idx]
                 target_boxes = target['boxes']
@@ -255,7 +258,6 @@ class Trainer():
                     continue
                 
                 target_boxes = change_box_order(target_boxes, 'yxyx2xyxy')
-                boxes = change_box_order(boxes, order='xyxy2xywh')
                 target_boxes = change_box_order(target_boxes, order='xyxy2xywh')
 
                 pred_gt_imgs = img

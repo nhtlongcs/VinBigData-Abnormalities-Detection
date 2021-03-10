@@ -56,13 +56,7 @@ def train(args, config):
 
     NUM_CLASSES = len(config.obj_list)
 
-    net = EfficientDetBackbone(
-        num_classes=NUM_CLASSES, 
-        compound_coef=args.compound_coef, 
-        load_weights=False, 
-        freeze_backbone = args.freeze_backbone,
-        pretrained_backbone_path=config.pretrained_backbone,
-        image_size=config.image_size)
+    net = get_model(args, config)
 
     if args.saved_path is not None:
         args.saved_path = os.path.join(args.saved_path, args.config)
@@ -83,8 +77,8 @@ def train(args, config):
         min_conf = config.min_conf_val,
         min_iou = config.min_iou_val,
         tta=config.tta,
-        max_images=config.max_images_val,
-        retransforms = None)
+        mode=config.fusion_mode,
+        max_images=config.max_images_val)
 
     optimizer, optimizer_params = get_lr_policy(config.lr_policy)
 
@@ -146,8 +140,7 @@ def train(args, config):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser('Training EfficientDet')
-    parser.add_argument('--config' , type=str, help='project file that contains parameters')
-    parser.add_argument('-c', '--compound_coef', type=str, default='0', help='coefficients of efficientdet')
+    parser.add_argument('config' , type=str, help='project file that contains parameters')
     parser.add_argument('--print_per_iter', type=int, default=300, help='Number of iteration to print')
     parser.add_argument('--val_interval', type=int, default=2, help='Number of epoches between valing phases')
     parser.add_argument('--save_interval', type=int, default=1000, help='Number of steps between saving')

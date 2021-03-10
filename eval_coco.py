@@ -54,15 +54,11 @@ def main(args, config):
         min_iou = config.min_iou_val,
         tta=config.tta,
         max_images=config.max_images_val,
-        retransforms = None)
+        mode=config.fusion_mode)
 
     NUM_CLASSES = len(config.obj_list)
 
-    net = EfficientDetBackbone(
-        num_classes=NUM_CLASSES, 
-        compound_coef=args.compound_coef, 
-        load_weights=False, 
-        image_size=config.image_size)
+    net = get_model(args, config)
 
     model = Detector(
                     n_classes=NUM_CLASSES,
@@ -82,8 +78,7 @@ def main(args, config):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser('Training EfficientDet')
-    parser.add_argument('--config' , type=str, help='project file that contains parameters')
-    parser.add_argument('-c', '--compound_coef', type=int, default=0, help='coefficients of efficientdet')
+    parser.add_argument('config' , type=str, help='project file that contains parameters')
     parser.add_argument('--max_images' , type=int, help='max number of images', default=10000)
     parser.add_argument('--weight' , type=str, help='project file that contains parameters')
 

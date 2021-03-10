@@ -61,7 +61,7 @@ class mAPScores(TemplateMetric):
             self,
             dataset, 
             max_images = 10000,
-            retransforms=None,
+            mode=None,
             min_conf = 0.3, 
             min_iou = 0.3, 
             tta = False,
@@ -76,9 +76,9 @@ class mAPScores(TemplateMetric):
                 drop_last= True,
                 shuffle=True, 
                 collate_fn=dataset.collate_fn) # requires batch size = 1
-
-        self.retransforms = retransforms
+        
         self.tta = tta
+        self.mode = mode
         self.min_conf = min_conf
         self.min_iou = min_iou
         self.decimals = decimals
@@ -112,34 +112,26 @@ class mAPScores(TemplateMetric):
                         preds = self.tta.make_tta_predictions(self.model, batch)
                     else:
                         preds = self.model.inference_step(batch, self.min_conf, self.min_iou)
-                    
-                    if self.retransforms is not None:
-                            preds = postprocessing(preds, batch['imgs'].cpu(), self.retransforms, out_format='xywh')
 
                     for i in range(len(preds)):
                         image_id = batch['img_ids'][i]
+                        img_size = batch['img_sizes'][i].numpy()
                         self.image_ids.append(image_id)
+                        pred = postprocessing(
+                            preds[i], 
+                            current_img_size=img_size,
+                            ori_img_size=img_size,
+                            min_iou=self.min_iou,
+                            min_conf=self.min_conf,
+                            mode=self.mode)
 
-                        pred = preds[i]
-
-                        if self.retransforms is not None:
-                            boxes = pred['bboxes']
-                        else:
-                            boxes = pred['bboxes']
-                        
+                        boxes = pred['bboxes'] 
                         labels = pred['classes']  
                         scores = pred['scores']
-
-                        indexes = np.where(scores > self.min_conf)[0]
-                        
-                        boxes = boxes[indexes]
-                        scores = scores[indexes]
-                        labels = labels[indexes]
 
                         if boxes is None or len(boxes) == 0:
                             empty_imgs += 1
                         else:
-                            boxes = change_box_order(boxes, order='xyxy2xywh')
                             for i in range(boxes.shape[0]):
                                 score = float(scores[i])
                                 label = int(labels[i])

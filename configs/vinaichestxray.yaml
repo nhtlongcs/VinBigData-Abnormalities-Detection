@@ -29,18 +29,21 @@ settings:
 
   #################   TRAINING CONFIG   ###################
   
+  model_name: 'efficientdet-d4' #[efficientdet-d{i}]
+
   pretrained_backbone: './weights/pretrained/pretrained_fold0_d4.pth'                  # Pretrained backbone
   
-  gpu_devices: '1'                     # supports multi-gpus
+  gpu_devices: '0,1'                     # supports multi-gpus
   num_epochs: 100
-  batch_size: 2
+  batch_size: 4
   num_workers: 4
 
-  min_iou_val:  0.5                     # IOU threshold for validation
-  min_conf_val: 0.001                    # Confidence score threshold for validation
+  fusion_mode: 'nms'                  # Post-process method [nms | wbf | None]
+  min_iou_val:  0.4                     # IOU threshold for validation
+  min_conf_val: 0.1                    # Confidence score threshold for validation
   max_images_val: 10000                 # max number of images for validation
   
-  image_size: [1024,1024]               # [512, 640, 768, 896, 1024, 1280, 1280, 1536, 1536]
+  image_size: [1024,1024]               # should be square to prevent bugs [512, 640, 768, 896, 1024, 1280, 1280, 1536, 1536]
   keep_ratio: False                     # whether to use resize padding
 
   cutmix: True
@@ -54,7 +57,8 @@ settings:
     weight_decay: 0.0005
 
   lr_scheduler:
-    name: "cosine"
+    name: "cosine"                      #[plateau | cosine | 1cycle-yolo | 1cycle]
+                                        # if need to specify more scheduler arguments, do it here
 
   # gradient accumulation
   mixed_precision: True                # whether to use nvidia apex
