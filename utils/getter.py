@@ -142,6 +142,7 @@ def get_dataset_and_dataloader(config):
                 'img_scales': img_scales}
 
     CocoDataset.collate_fn = collate_fn
+    setattr(config, 'box_format', box_format)
     train_transforms = get_augmentation(config, _type = 'train')
     val_transforms = get_augmentation(config, _type = 'val')
     
@@ -166,9 +167,6 @@ def get_dataset_and_dataloader(config):
         inference = True,
         train = False,
         transforms=val_transforms)
-
-    for dataset in [trainset, valset, testset]:
-        dataset.mode = box_format
 
     trainloader = DataLoader(
         trainset, 

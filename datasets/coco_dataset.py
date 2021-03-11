@@ -27,7 +27,8 @@ class CocoDataset(Dataset):
         self.cutmix = config.cutmix
         self.resize_transforms = get_resize_augmentation(config.image_size, config.keep_ratio, box_transforms=True)
 
-        self.mode = 'yxyx' # Output format of the __getitem__
+        self.box_format = config.box_format if config.box_format is not None else 'xyxy' # Output format of the __getitem__
+
         self.inference = inference
         self.train = train
 
@@ -111,7 +112,7 @@ class CocoDataset(Dataset):
 
         target = {}
 
-        if self.mode == 'yxyx':
+        if self.box_format == 'yxyx':
             boxes = change_box_order(boxes, 'xyxy2yxyx')
 
         target['boxes'] = boxes
@@ -245,7 +246,7 @@ class CocoDataset(Dataset):
         if normalize:
             img = denormalize(img = img)
 
-        if self.mode == 'yxyx':
+        if self.box_format == 'yxyx':
             box = change_box_order(box, 'yxyx2xyxy')
 
         box = box.numpy()

@@ -257,7 +257,8 @@ class Trainer():
                 if len(boxes) == 0 or boxes is None:
                     continue
                 
-                target_boxes = change_box_order(target_boxes, 'yxyx2xyxy')
+                if self.cfg.box_format == 'yxyx':
+                    target_boxes = change_box_order(target_boxes, 'yxyx2xyxy')
                 target_boxes = change_box_order(target_boxes, order='xyxy2xywh')
 
                 pred_gt_imgs = img
