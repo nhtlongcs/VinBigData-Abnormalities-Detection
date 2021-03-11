@@ -490,5 +490,5 @@ def create_fasterrcnn_fpn(backbone_name='resnet50', pretrained=False, progress=T
     model.roi_heads.box_predictor = FastRCNNPredictor(in_features, num_classes)
 
 
-    model = nn.DataParallel(model).cuda()
+    # model = nn.DataParallel(model).cuda()
     return model

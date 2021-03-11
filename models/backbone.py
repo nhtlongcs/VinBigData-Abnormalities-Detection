@@ -142,11 +142,11 @@ class FRCNNBackbone(BaseBackbone):
         loss_dict = {k:v.mean() for k,v in loss_dict.items()}
         loss = sum(loss for loss in loss_dict.values())
         ret_loss_dict = {
+            'T': loss,
             'C': loss_dict['loss_classifier'],
             'B': loss_dict['loss_box_reg'],
             'O': loss_dict['loss_objectness'],
-            'RPN': loss_dict['loss_rpn_box_reg'],
-            'T': loss
+            'RPN': loss_dict['loss_rpn_box_reg'],     
         }
         return ret_loss_dict
 
