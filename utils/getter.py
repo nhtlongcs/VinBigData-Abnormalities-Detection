@@ -16,7 +16,7 @@ from utils.utils import init_weights, one_cycle
 import torchvision.models as models
 from torch.optim import SGD, AdamW
 from torch.optim.lr_scheduler import StepLR, CosineAnnealingLR, LambdaLR, ReduceLROnPlateau,OneCycleLR, CosineAnnealingWarmRestarts
-from timm.utils import NativeScaler
+from utils import NativeScaler
 
 from .random_seed import seed_everything
 
