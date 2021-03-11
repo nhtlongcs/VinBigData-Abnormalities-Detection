@@ -72,11 +72,11 @@ def postprocessing(
         scores = scores[indexes]
         labels = labels[indexes]
 
-    # if ori_img_size is not None and current_img_size is not None:
-    #     boxes = resize_postprocessing(boxes, current_img_size=current_img_size, ori_img_size=ori_img_size)
+        # if ori_img_size is not None and current_img_size is not None:
+        #     boxes = resize_postprocessing(boxes, current_img_size=current_img_size, ori_img_size=ori_img_size)
 
-    if output_format == 'xywh':
-        boxes = change_box_order(boxes, order='xyxy2xywh')
+        if output_format == 'xywh':
+            boxes = change_box_order(boxes, order='xyxy2xywh')
 
 
     return {
