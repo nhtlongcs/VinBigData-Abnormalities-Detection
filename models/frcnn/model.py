@@ -12,7 +12,7 @@ from torchvision.ops import MultiScaleRoIAlign
 
 from torchvision.models.utils import load_state_dict_from_url
 
-from torchvision.models.detection.rpn import AnchorGenerator, RPNHead, RegionProposalNetwork
+from .rpn import AnchorGenerator, RPNHead, RegionProposalNetwork
 from torchvision.models.detection.roi_heads import RoIHeads
 from torchvision.models.detection.transform import GeneralizedRCNNTransform
 from torchvision.models.detection.backbone_utils import resnet_fpn_backbone
