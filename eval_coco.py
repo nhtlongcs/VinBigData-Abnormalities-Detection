@@ -32,13 +32,7 @@ def main(args, config):
 
     val_transforms = get_augmentation(config, _type = 'val')
 
-    testset = CocoDataset(
-        config = config,
-        root_dir=os.path.join('datasets', config.project_name, config.val_imgs), 
-        ann_path = os.path.join('datasets', config.project_name, config.val_anns),
-        inference = True,
-        train = False,
-        transforms=val_transforms)
+    _, _, testset, _, _ = get_dataset_and_dataloader(config)
 
     if config.tta:
         config.tta = TTA(

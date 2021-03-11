@@ -20,7 +20,7 @@ BATCH_SIZE = 16
 class TestDataset(Dataset):
     def __init__(self, config, test_df, transforms=None):
         self.image_size = config.image_size
-        self.root_dir = os.path.join('datasets', config.project_name, config.val_imgs)
+        self.root_dir = os.path.join('datasets', config.project_name, config.train_imgs)
         self.test_df = test_df
         self.transforms = transforms
         self.resize_transforms = get_resize_augmentation(config.image_size, config.keep_ratio, box_transforms=False)
@@ -190,7 +190,7 @@ def main(args, config):
 
         if args.submission:
             submission_df = pd.DataFrame(results, columns=['image_id', 'class_id', 'score', 'x_min', 'y_min' , 'x_max', 'y_max'])
-            submission_df.to_csv('results/0_val.csv', index=False)
+            submission_df.to_csv('results/0_train_pred.csv', index=False)
 
 
 if __name__ == '__main__':
