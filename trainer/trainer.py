@@ -230,7 +230,7 @@ class Trainer():
             if self.cfg.tta is not None:
                 outputs = self.cfg.tta.make_tta_predictions(self.model, batch)
             else:
-                outputs = self.model.inference_step(batch, conf_threshold = self.cfg.min_conf_val, iou_threshold = self.cfg.min_iou_val)
+                outputs = self.model.inference_step(batch)
 
             for idx in range(len(outputs)):
                 img = imgs[idx]
