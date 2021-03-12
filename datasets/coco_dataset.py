@@ -27,8 +27,8 @@ class CocoDataset(Dataset):
         self.cutmix = config.cutmix
         self.resize_transforms = get_resize_augmentation(config.image_size, config.keep_ratio, box_transforms=True)
 
-        self.box_format = config.box_format if config.box_format is not None else 'xyxy' # Output format of the __getitem__
-
+        self.box_format = config.box_format if config.box_format is not None else 'yxyx' # Output format of the __getitem__
+  
         self.inference = inference
         self.train = train
 

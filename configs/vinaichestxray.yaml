@@ -5,8 +5,8 @@ settings:
   train_imgs: images/train
   val_imgs: images/train
   test_imgs: images/test
-  train_anns: annotations/1_train.json
-  val_anns: annotations/1_val.json
+  train_anns: annotations/0_train_nms.json
+  val_anns: annotations/0_val_nms.json
 
   obj_list: [
     'No Finding',                       #Background
@@ -39,7 +39,7 @@ settings:
   num_workers: 4
 
   fusion_mode: 'nms'                  # Post-process method [nms | wbf | None]
-  min_iou_val:  0.4                     # IOU threshold for validation
+  min_iou_val:  0.5                     # IOU threshold for validation
   min_conf_val: 0.01                    # Confidence score threshold for validation
   max_images_val: 10000                 # max number of images for validation
   
@@ -52,7 +52,7 @@ settings:
   # learning rate policy
   lr_policy:
     name: "adam"                         #[adam|sgd]
-    lr: 0.002                            #[adam: 1e-3 | sgd: 1e-2]
+    lr: 0.005                            #[adam: 1e-3 | sgd: 1e-2]
     momentum: 0.937
     weight_decay: 0.0005
 
@@ -62,8 +62,10 @@ settings:
 
   # gradient accumulation
   mixed_precision: True                # whether to use nvidia apex
-  total_accumulate_steps: 0            # step * batch_size, not use if equal 0
+  total_accumulate_steps: 0           # step * batch_size, not use if equal 0
 
   # Test time augmentation
   tta: False                             # whether to use TTA while validation
   tta_ensemble_mode: "wbf"              # ensemble method when TTA
+  tta_conf_threshold: 0.01
+  tta_iou_threshold: 0.9

@@ -44,4 +44,3 @@ class Detector(BaseModel):
         self.update_metrics(model=self)
         return loss, loss_dict
 
-    

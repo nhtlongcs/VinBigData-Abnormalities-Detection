@@ -30,11 +30,11 @@ def default_detection_model_configs():
     h.max_level = 7
     h.num_levels = h.max_level - h.min_level + 1
     h.num_scales = 3
-    h.aspect_ratios = [(1.0, 1.0), (1.4, 0.7), (0.7, 1.4)]
+    # h.aspect_ratios = [(1.0, 1.0), (1.4, 0.7), (0.7, 1.4)]
     # ratio w/h: 2.0 means w=1.4, h=0.7. Can be computed with k-mean per dataset.
     # aspect ratios can be specified as below too, pairs will be calc as sqrt(val), 1/sqrt(val)
-    #h.aspect_ratios = [1.0, 2.0, 0.5]
-    h.anchor_scale = 4.0
+    h.aspect_ratios = [1.0, 2.0, 0.5] #[1.0, 2.0, 0.5] 
+    h.anchor_scale = 4.0 #4.0
 
     # FPN and head config
     h.pad_type = 'same'  # original TF models require an equivalent of Tensorflow 'SAME' padding
@@ -73,7 +73,7 @@ def default_detection_model_configs():
     # nms
     h.soft_nms = False  # use soft-nms, this is incredibly slow
     h.max_detection_points = 30000  # max detections for post process, input to NMS
-    h.max_det_per_image = 300  # max detections per image limit, output of NMS
+    h.max_det_per_image = 200  # max detections per image limit, output of NMS
 
     return h
 
