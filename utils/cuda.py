@@ -20,8 +20,10 @@ class ApexScaler:
             scaled_loss.backward(create_graph=create_graph)
         if clip_grad is not None:
             torch.nn.utils.clip_grad_norm_(amp.master_params(optimizer), clip_grad)
+        
+    def step(self,optimizer):
         optimizer.step()
-
+        
     def state_dict(self):
         if 'state_dict' in amp.__dict__:
             return amp.state_dict()
@@ -43,6 +45,8 @@ class NativeScaler:
             assert parameters is not None
             self._scaler.unscale_(optimizer)  # unscale the gradients of optimizer's assigned params in-place
             torch.nn.utils.clip_grad_norm_(parameters, clip_grad)
+    
+    def step(self,optimizer):
         self._scaler.step(optimizer)
         self._scaler.update()
 

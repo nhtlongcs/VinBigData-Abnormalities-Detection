@@ -98,6 +98,8 @@ class Trainer():
                 if (i+1) % self.accumulate_steps == 0 or i == len(self.trainloader)-1:
                     if not self.use_amp:
                         self.optimizer.step()
+                    else:
+                        self.model.scaler.step(self.optimizer)
                     if self.scheduler is not None and not self.step_per_epoch:
                         self.scheduler.step()
                     self.optimizer.zero_grad()
