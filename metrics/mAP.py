@@ -8,6 +8,9 @@ False Negative (FN): Failed to predict an object that was there
 if IOU prediction >= IOU threshold, prediction is TP
 if 0 < IOU prediction < IOU threshold, prediction is FP
 
+All boxes left in the prediction that are not matched are FP
+All boxes left in the ground truth that are not matched are FN
+
 Precision measures how accurate your predictions are. Precision = TP/(TP+FP)
 Recall measures how well you find all the positives. Recal = TP/(TP+FN)
 
