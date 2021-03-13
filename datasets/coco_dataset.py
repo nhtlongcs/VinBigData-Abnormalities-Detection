@@ -95,7 +95,7 @@ class CocoDataset(Dataset):
                     image, boxes, labels, img_id, img_name = self.load_cutmix_image_and_boxes(idx, self.image_size)
                 else:
                     image, boxes, labels, img_id, img_name = self.load_image_and_boxes(idx)
-        image = image.astype(np.float32)
+        image = image.astype(np.uint8)
         if self.transforms:
             item = self.transforms(image=image, bboxes=boxes, class_labels=labels)
             # Normalize

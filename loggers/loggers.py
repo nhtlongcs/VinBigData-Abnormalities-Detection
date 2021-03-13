@@ -12,7 +12,7 @@ class Logger():
         self.log_dir = log_dir
         self.log_dir = os.path.join(log_dir,datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
         if not os.path.exists(self.log_dir):
-            os.mkdir(self.log_dir)
+            os.makedirs(self.log_dir)
         self.writer = SummaryWriter(log_dir=self.log_dir)
         self.iters = {}
 
