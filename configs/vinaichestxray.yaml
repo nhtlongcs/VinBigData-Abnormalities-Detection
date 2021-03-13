@@ -5,8 +5,8 @@ settings:
   train_imgs: images/train
   val_imgs: images/train
   test_imgs: images/test
-  train_anns: annotations/0_train_nms.json
-  val_anns: annotations/0_val_nms.json
+  train_anns: annotations/2_train.json
+  val_anns: annotations/2_val.json
 
   obj_list: [
     'No Finding',                       #Background
@@ -29,9 +29,9 @@ settings:
 
   #################   TRAINING CONFIG   ###################
   
-  model_name: 'efficientdet-d4' #[efficientdet-d{i} | fasterrcnn-{backbone}]
+  model_name: 'efficientdet-d5' #[efficientdet-d{i} | fasterrcnn-{backbone}]
 
-  pretrained_backbone: './weights/pretrained/pretrained_fold0_d4.pth'                  # Pretrained backbone
+  #pretrained_backbone: './weights/pretrained/pretrained_fold0_d4.pth'                  # Pretrained backbone
   
   gpu_devices: '0,1'                     # supports multi-gpus
   num_epochs: 100
@@ -39,7 +39,7 @@ settings:
   num_workers: 4
 
   fusion_mode: 'nms'                  # Post-process method [nms | wbf | None]
-  min_iou_val:  0.5                     # IOU threshold for validation
+  min_iou_val:  0.6                     # IOU threshold for validation
   min_conf_val: 0.01                    # Confidence score threshold for validation
   max_images_val: 10000                 # max number of images for validation
   
