@@ -29,11 +29,35 @@ import torch
 import json
 import numpy as np
 from tqdm import tqdm
+import pandas as pd
 from pycocotools.coco import COCO
 from pycocotools.cocoeval import COCOeval
 from .metrictemplate import TemplateMetric
 from utils.utils import change_box_order
 from utils.postprocess import postprocessing
+
+USE_FILTER = False
+
+def binary_filter(df, image_id, boxes, scores, labels, low_thr=0.06, high_thr=0.95):
+    abnormal_prob = float(df[df['image_id'] == image_id].class14prob)
+    if abnormal_prob < low_thr:
+        new_boxes = [[0,0,1,1]]
+        new_labels = [14]
+        new_scores = [1.0]
+    elif abnormal_prob < high_thr:
+        new_boxes = boxes.tolist()
+        new_labels = labels.tolist()
+        new_scores = scores.tolist()
+
+        new_boxes.append([0,0,1,1])
+        new_labels.append(14)
+        new_scores.append(abnormal_prob)
+    else:
+        new_boxes = boxes
+        new_scores = scores
+        new_labels = labels
+
+    return np.array(new_boxes), np.array(new_scores), np.array(new_labels)
 
 def _eval(coco_gt, image_ids, pred_json_path, **kwargs):
     # load results in COCO evaluation tool
@@ -80,6 +104,11 @@ class mAPScores(TemplateMetric):
                 shuffle=True, 
                 collate_fn=dataset.collate_fn) # requires batch size = 1
         
+        # Hard code for contest
+        if USE_FILTER:
+            self.df = pd.read_csv('./datasets/test_info.csv')
+
+
         self.tta = tta
         self.mode = mode
         self.min_conf = min_conf
@@ -120,6 +149,7 @@ class mAPScores(TemplateMetric):
                         image_id = batch['img_ids'][i]
                         img_size = batch['img_sizes'][i].numpy()
                         self.image_ids.append(image_id)
+
                         pred = postprocessing(
                             preds[i], 
                             current_img_size=img_size,
@@ -131,6 +161,14 @@ class mAPScores(TemplateMetric):
                         boxes = pred['bboxes'] 
                         labels = pred['classes']  
                         scores = pred['scores']
+
+                        if USE_FILTER:
+                            boxes, scores, labels = binary_filter(
+                                self.df, 
+                                image_id=image_id, 
+                                boxes=boxes, 
+                                scores=scores, 
+                                labels=labels)
 
                         if boxes is None or len(boxes) == 0:
                             empty_imgs += 1
