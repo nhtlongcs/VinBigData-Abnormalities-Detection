@@ -87,7 +87,7 @@ def get_lr_scheduler(optimizer, lr_config, **kwargs):
     elif scheduler_name == 'cosine':
         scheduler = CosineAnnealingWarmRestarts(
             optimizer,
-            T_0=50,     #kwargs['num_epochs']
+            T_0=kwargs['num_epochs'],
             T_mult=1,
             eta_min=0.0001,
             last_epoch=-1,

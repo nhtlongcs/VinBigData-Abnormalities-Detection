@@ -162,15 +162,15 @@ class mAPScores(TemplateMetric):
             stats = _eval(self.coco_gt, self.image_ids, self.filepath)
             return {
                 "MAP" : np.round(float(stats[0]),self.decimals),
-                "MAPsmall" : np.round(float(stats[3]),self.decimals),
-                "MAPmedium" : np.round(float(stats[4]),self.decimals),
-                "MAPlarge" : np.round(float(stats[5]),self.decimals),}
+                "MAP/small" : np.round(float(stats[3]),self.decimals),
+                "MAP/medium" : np.round(float(stats[4]),self.decimals),
+                "MAP/large" : np.round(float(stats[5]),self.decimals),}
         else:
             return {
                 "MAP" : 0.0,
-                "MAPsmall" : 0.0,
-                "MAPmedium" : 0.0,
-                "MAPlarge" : 0.0,}
+                "MAP/small" : 0.0,
+                "MAP/medium" : 0.0,
+                "MAP/large" : 0.0,}
 
     def __str__(self):
         return f'Mean Average Precision: {self.value()}'

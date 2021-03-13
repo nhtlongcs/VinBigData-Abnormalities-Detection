@@ -1,8 +1,6 @@
 """ PyTorch EfficientDet model
-
 Based on official Tensorflow version at: https://github.com/google/automl/tree/master/efficientdet
 Paper: https://arxiv.org/abs/1911.09070
-
 Hacked together by Ross Wightman
 """
 import torch
@@ -13,7 +11,7 @@ import math
 from collections import OrderedDict
 from typing import List, Callable, Optional, Union, Tuple
 from functools import partial
-import copy
+
 
 from timm import create_model
 from timm.models.layers import create_conv2d, create_pool2d, Swish, get_act_layer
@@ -81,18 +79,14 @@ class SeparableConv2d(nn.Module):
 
 class Interpolate2d(nn.Module):
     r"""Resamples a 2d Image
-
     The input data is assumed to be of the form
     `minibatch x channels x [optional depth] x [optional height] x width`.
     Hence, for spatial inputs, we expect a 4D Tensor and for volumetric inputs, we expect a 5D Tensor.
-
     The algorithms available for upsampling are nearest neighbor and linear,
     bilinear, bicubic and trilinear for 3D, 4D and 5D input Tensor,
     respectively.
-
     One can either give a :attr:`scale_factor` or the target output :attr:`size` to
     calculate the output size. (You cannot give both, as it is ambiguous)
-
     Args:
         size (int or Tuple[int] or Tuple[int, int] or Tuple[int, int, int], optional):
             output spatial sizes
@@ -130,7 +124,7 @@ class Interpolate2d(nn.Module):
 
     def forward(self, input: torch.Tensor) -> torch.Tensor:
         return F.interpolate(
-            input, self.size, self.scale_factor, self.mode, self.align_corners, recompute_scale_factor=True)
+            input, self.size, self.scale_factor, self.mode, self.align_corners, recompute_scale_factor=False)
 
 
 class ResampleFeatureMap(nn.Sequential):
@@ -407,7 +401,6 @@ class HeadNet(nn.Module):
     def toggle_bn_level_first(self):
         """ Toggle the batchnorm layers between feature level first vs repeat first access pattern
         Limitations in torchscript require feature levels to be iterated over first.
-
         This function can be used to allow loading weights in the original order, and then toggle before
         jit scripting the model.
         """
@@ -549,7 +542,6 @@ def get_feature_info(backbone):
         # new feature info accessor, timm >= 0.2, all models supported
         feature_info = backbone.feature_info.get_dicts(keys=['num_chs', 'reduction'])
     return feature_info
-
 
 class EfficientDet(nn.Module):
 

@@ -1,7 +1,5 @@
 """EfficientDet Configurations
-
 Adapted from official impl at https://github.com/google/automl/tree/master/efficientdet
-
 TODO use a different config system (OmegaConfig -> Hydra?), separate model from train specific hparams
 """
 
@@ -18,6 +16,7 @@ def default_detection_model_configs():
 
     h.backbone_name = 'tf_efficientnet_b1'
     h.backbone_args = None  # FIXME sort out kwargs vs config for backbone creation
+    h.backbone_indices = None
 
     # model specific, input preprocessing parameters
     h.image_size = (640, 640)
@@ -30,11 +29,11 @@ def default_detection_model_configs():
     h.max_level = 7
     h.num_levels = h.max_level - h.min_level + 1
     h.num_scales = 3
-    # h.aspect_ratios = [(1.0, 1.0), (1.4, 0.7), (0.7, 1.4)]
+    h.aspect_ratios = [(1.0, 1.0), (1.4, 0.7), (0.7, 1.4)]
     # ratio w/h: 2.0 means w=1.4, h=0.7. Can be computed with k-mean per dataset.
     # aspect ratios can be specified as below too, pairs will be calc as sqrt(val), 1/sqrt(val)
-    h.aspect_ratios = [1.0, 2.0, 0.5] #[1.0, 2.0, 0.5] 
-    h.anchor_scale = 4.0 #4.0
+    #h.aspect_ratios = [1.0, 2.0, 0.5]
+    h.anchor_scale = 4.0
 
     # FPN and head config
     h.pad_type = 'same'  # original TF models require an equivalent of Tensorflow 'SAME' padding
@@ -62,7 +61,7 @@ def default_detection_model_configs():
     # classification loss (used by train bench)
     h.alpha = 0.25
     h.gamma = 1.5
-    h.label_smoothing = 0.1  # only supported if legacy_focal == False, haven't produced great results
+    h.label_smoothing = 0.  # only supported if legacy_focal == False, haven't produced great results
     h.legacy_focal = False  # use legacy focal loss (less stable, lower memory use in some cases)
     h.jit_loss = False  # torchscript jit for loss fn speed improvement, can impact stability and/or increase mem usage
 
@@ -72,8 +71,8 @@ def default_detection_model_configs():
 
     # nms
     h.soft_nms = False  # use soft-nms, this is incredibly slow
-    h.max_detection_points = 30000  # max detections for post process, input to NMS
-    h.max_det_per_image = 200  # max detections per image limit, output of NMS
+    h.max_detection_points = 5000  # max detections for post process, input to NMS
+    h.max_det_per_image = 100  # max detections per image limit, output of NMS
 
     return h
 
@@ -167,7 +166,7 @@ efficientdet_model_param_dict = dict(
     cspresdet50=dict(
         name='cspresdet50',
         backbone_name='cspresnet50',
-        image_size=(640, 640),
+        image_size=(768, 768),
         aspect_ratios=[1.0, 2.0, 0.5],
         fpn_channels=88,
         fpn_cell_repeats=4,
@@ -175,13 +174,13 @@ efficientdet_model_param_dict = dict(
         pad_type='',
         act_type='leaky_relu',
         head_act_type='silu',
-        downsample_type='max',
+        downsample_type='bilinear',
         upsample_type='bilinear',
         redundant_bias=False,
         separable_conv=False,
         head_bn_level_first=True,
         backbone_args=dict(drop_path_rate=0.2),
-        url='',
+        url='https://github.com/rwightman/efficientdet-pytorch/releases/download/v0.1/cspresdet50b-386da277.pth',
     ),
     cspresdext50=dict(
         name='cspresdext50',
@@ -230,7 +229,29 @@ efficientdet_model_param_dict = dict(
         separable_conv=False,
         head_bn_level_first=True,
         backbone_args=dict(drop_path_rate=0.2),
+        backbone_indices=(3, 4, 5),
         url='',
+    ),
+    cspdarkdet53m=dict(
+        name='cspdarkdet53m',
+        backbone_name='cspdarknet53',
+        image_size=(768, 768),
+        aspect_ratios=[1.0, 2.0, 0.5],
+        fpn_channels=96,
+        fpn_cell_repeats=4,
+        box_class_repeats=3,
+        pad_type='',
+        fpn_name='qufpn_fa',
+        act_type='leaky_relu',
+        head_act_type='mish',
+        downsample_type='bilinear',
+        upsample_type='bilinear',
+        redundant_bias=False,
+        separable_conv=False,
+        head_bn_level_first=True,
+        backbone_args=dict(drop_path_rate=0.2),
+        backbone_indices=(3, 4, 5),
+        url='https://github.com/rwightman/efficientdet-pytorch/releases/download/v0.1/cspdarkdet53m-79062b2d.pth',
     ),
     mixdet_m=dict(
         name='mixdet_m',
@@ -328,10 +349,12 @@ efficientdet_model_param_dict = dict(
         box_class_repeats=3,
         pad_type='',
         fpn_name='qufpn_fa',  # quad-fpn + fast attn experiment
+        downsample_type='bilinear',
+        upsample_type='bilinear',
         redundant_bias=False,
         head_bn_level_first=True,
         backbone_args=dict(drop_path_rate=0.2),
-        url='https://github.com/rwightman/efficientdet-pytorch/releases/download/v0.1/efficientdet_q1-b238aba5.pth',
+        url='https://github.com/rwightman/efficientdet-pytorch/releases/download/v0.1/efficientdet_q1b-d0612140.pth',
     ),
     efficientdet_q2=dict(
         name='efficientdet_q2',

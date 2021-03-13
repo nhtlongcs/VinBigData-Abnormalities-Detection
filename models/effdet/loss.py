@@ -1,8 +1,6 @@
 """ EfficientDet Focal, Huber/Smooth L1 loss fns w/ jit support
-
 Based on loss fn in Google's automl EfficientDet repository (Apache 2.0 license).
 https://github.com/google/automl/tree/master/efficientdet
-
 Copyright 2020 Ross Wightman
 """
 import torch
@@ -14,26 +12,18 @@ from typing import Optional, List, Tuple
 
 def focal_loss_legacy(logits, targets, alpha: float, gamma: float, normalizer):
     """Compute the focal loss between `logits` and the golden `target` values.
-
     'Legacy focal loss matches the loss used in the official Tensorflow impl for initial
     model releases and some time after that. It eventually transitioned to the 'New' loss
     defined below.
-
     Focal loss = -(1-pt)^gamma * log(pt)
     where pt is the probability of being classified to the true class.
-
     Args:
         logits: A float32 tensor of size [batch, height_in, width_in, num_predictions].
-
         targets: A float32 tensor of size [batch, height_in, width_in, num_predictions].
-
         alpha: A float32 scalar multiplying alpha to the loss from positive examples
             and (1-alpha) to the loss from negative examples.
-
         gamma: A float32 scalar modulating loss from hard and easy examples.
-
          normalizer: A float32 scalar normalizes the total loss from all examples.
-
     Returns:
         loss: A float32 scalar representing normalized total loss.
     """
@@ -49,11 +39,9 @@ def focal_loss_legacy(logits, targets, alpha: float, gamma: float, normalizer):
 
 def new_focal_loss(logits, targets, alpha: float, gamma: float, normalizer, label_smoothing: float = 0.01):
     """Compute the focal loss between `logits` and the golden `target` values.
-
     'New' is not the best descriptor, but this focal loss impl matches recent versions of
     the official Tensorflow impl of EfficientDet. It has support for label smoothing, however
     it is a bit slower, doesn't jit optimize well, and uses more memory.
-
     Focal loss = -(1-pt)^gamma * log(pt)
     where pt is the probability of being classified to the true class.
     Args:
@@ -71,7 +59,6 @@ def new_focal_loss(logits, targets, alpha: float, gamma: float, normalizer, labe
     pred_prob = logits.sigmoid()
     targets = targets.to(logits.dtype)
     onem_targets = 1. - targets
-
     p_t = (targets * pred_prob) + (onem_targets * (1. - pred_prob))
     alpha_factor = targets * alpha + onem_targets * (1. - alpha)
     modulating_factor = (1. - p_t) ** gamma
@@ -162,21 +149,14 @@ def loss_fn(
     Args:
         cls_outputs: a List with values representing logits in [batch_size, height, width, num_anchors].
             at each feature level (index)
-
         box_outputs: a List with values representing box regression targets in
             [batch_size, height, width, num_anchors * 4] at each feature level (index)
-
         cls_targets: groundtruth class targets.
-
         box_targets: groundtrusth box targets.
-
         num_positives: num positive grountruth anchors
-
     Returns:
         total_loss: an integer tensor representing total loss reducing from class and box losses from all levels.
-
         cls_loss: an integer tensor representing total class loss.
-
         box_loss: an integer tensor representing total box regression loss.
     """
     # Sum all positives in a batch for normalization and avoid zero
