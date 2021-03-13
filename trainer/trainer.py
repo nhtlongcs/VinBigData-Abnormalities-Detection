@@ -101,7 +101,11 @@ class Trainer():
                     else:
                         self.model.scaler.step(self.optimizer)
                     if self.scheduler is not None and not self.step_per_epoch:
-                        self.scheduler.step()
+                        self.scheduler.step((self.num_epochs + i) / len(self.trainloader))
+                        lrl = [x['lr'] for x in self.optimizer.param_groups]
+                        lr = sum(lrl) / len(lrl)
+                        log_dict = {'Learning rate/Iterations': lr}
+                        self.logging(log_dict)
                     self.optimizer.zero_grad()
             else:
                 if not self.use_amp:
@@ -110,7 +114,7 @@ class Trainer():
                     self.model.scaler.step(self.optimizer)
                 if self.scheduler is not None and not self.step_per_epoch:
                     # self.scheduler.step()
-                    self.scheduler.step(self.num_epochs + i / len(self.trainloader))
+                    self.scheduler.step((self.num_epochs + i) / len(self.trainloader))
                     lrl = [x['lr'] for x in self.optimizer.param_groups]
                     lr = sum(lrl) / len(lrl)
                     log_dict = {'Learning rate/Iterations': lr}
