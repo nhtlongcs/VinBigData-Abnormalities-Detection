@@ -57,6 +57,7 @@ LABELS = [
     "No Finding",
 ]
 
+
 class mAPScore:
     """
     Arguments:
@@ -86,7 +87,7 @@ class mAPScore:
         self.gt_json = "./temp/gt.json"
         self.pred_json = "./temp/pred.json"
         self.is_normalized = is_normalized
-        
+
         self.gt_df = self.process_df(self.gt_df)
         if self.is_normalized:
             self.tmp_df = self.gt_df[["image_id", "width", "height"]]
@@ -181,7 +182,6 @@ class mAPScore:
             json.dump(my_dict, outfile)
 
     def make_pred_json_file(self):
-
         """
            Output .json format example: (source: https://cocodataset.org/#format-results)
             [{
@@ -207,7 +207,6 @@ class mAPScore:
             image_id, class_id, xmin, ymin, xmax, ymax, score = ann
             if self.is_normalized:
                 image_df = self.tmp_df.loc[self.tmp_df["image_id"] == image_id]
-
                 width = int(image_df["width"].iloc[0])
                 height = int(image_df["height"].iloc[0])
             else:
@@ -238,7 +237,6 @@ class mAPScore:
     def update_pred(self, pred_df):
         self.pred_df = self.process_df(pred_df)
         self.make_pred_json_file()
-        
 
     def evaluate(self):
         # load results in COCO evaluation tool

@@ -39,7 +39,8 @@ def convert_coco_json_to_csv(filename, output_path, meta_size=512, normalize=Tru
         label = ann["category_id"]
         score = ann["score"]
         out.write(
-            "{},{},{},{},{},{},{}\n".format(image_id, label, x1, y1, x2, y2, score)
+            "{},{},{},{},{},{},{}\n".format(
+                image_id, label, x1, y1, x2, y2, score)
         )
     out.close()
 
@@ -70,7 +71,7 @@ parser.add_argument(
     help="meta data width height path",
 )
 parser.add_argument(
-    "--size", default=1280, type=int, help="meta data width height resized",
+    "--size", default=1024, type=int, help="meta data width height resized",
 )
 parser.add_argument(
     "--normalize", action="store_true", default=False, help="normalize bboxes flag",
