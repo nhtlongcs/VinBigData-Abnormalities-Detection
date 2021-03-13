@@ -194,17 +194,18 @@ class CocoDataset:
                     }
                     my_dict["images"].append(img_dict)
 
-                ratio = resized_ratio(
-                    raw_shape=(width, height),
-                    target_size=(self.img_size, self.img_size),
-                    keep_ratio=self.keep_ratio,
-                )
+                if class_id != 14:
+                    ratio = resized_ratio(
+                        raw_shape=(width, height),
+                        target_size=(self.img_size, self.img_size),
+                        keep_ratio=self.keep_ratio,
+                    )
 
-                # Resize bbox
-                xmax = xmax * ratio[0]
-                xmin = xmin * ratio[0]
-                ymax = ymax * ratio[1]
-                ymin = ymin * ratio[1]
+                    # Resize bbox
+                    xmax = xmax * ratio[0]
+                    xmin = xmin * ratio[0]
+                    ymax = ymax * ratio[1]
+                    ymin = ymin * ratio[1]
                 ann_w = xmax - xmin
                 ann_h = ymax - ymin
                 image_id = image_dict[image_name]
