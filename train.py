@@ -41,15 +41,10 @@ def train(args, config):
 
     optimizer, optimizer_params = get_lr_policy(config.lr_policy)
 
-    if config.mixed_precision:
-        scaler = NativeScaler()
-    else:
-        scaler = None
-
     model = Detector(
             model = net,
             metrics=metric,
-            scaler=scaler,
+            scaler=NativeScaler(),
             optimizer= optimizer,
             optim_params = optimizer_params,     
             device = device)
@@ -108,6 +103,7 @@ if __name__ == '__main__':
     parser.add_argument('--saved_path', type=str, default='./weights')
     parser.add_argument('--no_visualization', action='store_false', help='whether to visualize box to ./sample when validating (for debug), default=on')
     parser.add_argument('--freeze_backbone', action='store_true', help='whether to freeze the backbone')
+    parser.add_argument('--freeze-bn', action='store_true', help='whether to freeze the backbone')
     
     args = parser.parse_args()
     config = Config(os.path.join('configs',args.config+'.yaml'))

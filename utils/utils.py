@@ -277,9 +277,3 @@ def draw_pred_gt_boxes(image_outname, img, boxes, labels, scores, image_name=Non
     plt.savefig(image_outname,bbox_inches='tight')
     plt.close()
 
-def one_cycle(y1=0.0, y2=1.0, steps=100):
-    # lambda function for sinusoidal ramp from y1 to y2
-    return lambda x: ((1 - math.cos(x * math.pi / steps)) / 2) * (y2 - y1) + y1
-
-
-

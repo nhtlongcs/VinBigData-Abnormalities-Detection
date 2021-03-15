@@ -12,7 +12,7 @@ from tqdm import tqdm
 import torch.nn as nn
 import torch.utils.data as data
 from torch.utils.data import DataLoader
-from utils.utils import init_weights, one_cycle
+from utils.utils import init_weights
 import torchvision.models as models
 from torch.optim import SGD, AdamW
 from torch.optim.lr_scheduler import StepLR, CosineAnnealingLR, LambdaLR, ReduceLROnPlateau,OneCycleLR, CosineAnnealingWarmRestarts
@@ -53,6 +53,10 @@ def get_lr_scheduler(optimizer, lr_config, **kwargs):
     step_per_epoch = False
 
     if scheduler_name == '1cycle-yolo':
+        def one_cycle(y1=0.0, y2=1.0, steps=100):
+            # lambda function for sinusoidal ramp from y1 to y2
+            return lambda x: ((1 - math.cos(x * math.pi / steps)) / 2) * (y2 - y1) + y1
+
         lf = one_cycle(1, 0.158, kwargs['num_epochs'])  # cosine 1->hyp['lrf']
         scheduler = LambdaLR(optimizer, lr_lambda=lf)
         step_per_epoch = True
