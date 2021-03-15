@@ -555,7 +555,8 @@ class EfficientDet(nn.Module):
 
         if pretrained_backbone_path is not None:
             print("load pretrained")
-            self.backbone.load_state_dict(torch.load(pretrained_backbone_path, map_location="cpu"))
+            state = self.get_pretrained(pretrained_backbone_path)
+            self.backbone.load_state_dict(state)
 
         if freeze_backbone and pretrained_backbone_path is not None:
             print("freeze backbone")
@@ -607,6 +608,20 @@ class EfficientDet(nn.Module):
                     _init_weight(m, n)
 
     @torch.jit.ignore()
+    def get_pretrained(self, path):
+        from collections import OrderedDict
+
+        # Unwrap .model phrase
+        new_state = OrderedDict()
+        state = torch.load(path, map_location="cpu")['model']
+        for k,v in state.items():
+            name = k[6:]
+            new_state[name]=v
+
+        return new_state
+        
+
+    @torch.jit.ignore()
     def toggle_head_bn_level_first(self):
         """ Toggle the head batchnorm layers between being access with feature_level first vs repeat
         """
@@ -619,3 +634,4 @@ class EfficientDet(nn.Module):
         x_class = self.class_net(x)
         x_box = self.box_net(x)
         return x_class, x_box
+
