@@ -17,8 +17,6 @@ from torchvision.models.detection.roi_heads import RoIHeads
 from torchvision.models.detection.transform import GeneralizedRCNNTransform
 from torchvision.models.detection.backbone_utils import resnet_fpn_backbone
 
-from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
-
 __all__ = [
     "FasterRCNN", "create_fasterrcnn_fpn",
 ]

@@ -54,7 +54,6 @@ def train(args, config):
         start_epoch, start_iter, best_value = get_epoch_iters(args.resume)
     else:
         print('Not resume. Initialize weights')
-        init_weights(model.model)
         start_epoch, start_iter, best_value = 0, 0, 0.0
         
     scheduler, step_per_epoch = get_lr_scheduler(
