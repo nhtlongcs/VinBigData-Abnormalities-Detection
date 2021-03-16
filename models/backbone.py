@@ -35,8 +35,8 @@ def get_model(args, config):
         net = FRCNNBackbone(
             backbone_name=backbone_name,
             num_classes=NUM_CLASSES, 
-            pretrained=True
-        )
+            pretrained=True,
+            image_size=config.image_size)
 
     return net
 
@@ -130,12 +130,13 @@ class FRCNNBackbone(BaseBackbone):
         self, 
         backbone_name,
         num_classes=80, 
+        image_size=[512,512], 
         pretrained=False,
         **kwargs):
 
         super(FRCNNBackbone, self).__init__(**kwargs)
         self.name = f'fasterrcnn-{backbone_name}'
-        self.model = create_fasterrcnn_fpn(backbone_name,pretrained=pretrained, num_classes=num_classes)
+        self.model = create_fasterrcnn_fpn(backbone_name,pretrained=pretrained, num_classes=num_classes, min_size = image_size[0], max_size = image_size[1])
         self.num_classes = num_classes
 
     def forward(self, batch, device):
