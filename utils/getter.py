@@ -9,6 +9,7 @@ from configs import *
 
 import torch
 from tqdm import tqdm
+import math
 import torch.nn as nn
 import torch.utils.data as data
 from torch.utils.data import DataLoader
@@ -146,7 +147,6 @@ def get_dataset_and_dataloader(config):
                 'img_scales': img_scales}
 
     CocoDataset.collate_fn = collate_fn
-    setattr(config, 'box_format', box_format)
     train_transforms = get_augmentation(config, _type = 'train')
     val_transforms = get_augmentation(config, _type = 'val')
     
@@ -171,6 +171,10 @@ def get_dataset_and_dataloader(config):
         inference = True,
         train = False,
         transforms=val_transforms)
+
+    trainset.set_box_format(box_format)
+    valset.set_box_format(box_format)
+    testset.set_box_format(box_format)
 
     trainloader = DataLoader(
         trainset, 
