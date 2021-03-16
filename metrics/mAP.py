@@ -36,22 +36,24 @@ from .metrictemplate import TemplateMetric
 from utils.utils import change_box_order
 from utils.postprocess import postprocessing
 
-USE_FILTER = False
+USE_FILTER = True
 
-def binary_filter(df, image_id, boxes, scores, labels, low_thr=0.06, high_thr=0.95):
-    abnormal_prob = float(df[df['image_id'] == image_id].class14prob)
-    if abnormal_prob < low_thr:
+def binary_filter(df, image_id, boxes, scores, labels, low_thr=0.05, high_thr=0.94):
+    image_id=image_id[:-4]
+    non_abnormal_prob_series = df[df['image_id'] == image_id].class14prob
+    non_abnormal_prob = float(non_abnormal_prob_series.tolist()[0])
+    if non_abnormal_prob >= high_thr:
         new_boxes = [[0,0,1,1]]
         new_labels = [14]
         new_scores = [1.0]
-    elif abnormal_prob < high_thr:
+    elif non_abnormal_prob > low_thr:
         new_boxes = boxes.tolist()
         new_labels = labels.tolist()
         new_scores = scores.tolist()
 
         new_boxes.append([0,0,1,1])
         new_labels.append(14)
-        new_scores.append(abnormal_prob)
+        new_scores.append(non_abnormal_prob)
     else:
         new_boxes = boxes
         new_scores = scores
@@ -106,7 +108,7 @@ class mAPScores(TemplateMetric):
         
         # Hard code for contest
         if USE_FILTER:
-            self.df = pd.read_csv('./datasets/test_info.csv')
+            self.df = pd.read_csv('/home/pmkhoi/source/vinaichestxray/datasets/class14_train.csv')
 
 
         self.tta = tta
@@ -147,6 +149,7 @@ class mAPScores(TemplateMetric):
 
                     for i in range(len(preds)):
                         image_id = batch['img_ids'][i]
+                        image_name = batch['img_names'][i]
                         img_size = batch['img_sizes'][i].numpy()
                         self.image_ids.append(image_id)
 
@@ -165,7 +168,7 @@ class mAPScores(TemplateMetric):
                         if USE_FILTER:
                             boxes, scores, labels = binary_filter(
                                 self.df, 
-                                image_id=image_id, 
+                                image_id=image_name, 
                                 boxes=boxes, 
                                 scores=scores, 
                                 labels=labels)
