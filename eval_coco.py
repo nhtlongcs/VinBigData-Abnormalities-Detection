@@ -29,10 +29,7 @@ def main(args, config):
     num_gpus = len(config.gpu_devices.split(','))
 
     device = torch.device("cuda" if torch.cuda.is_available() else 'cpu')
-
-    val_transforms = get_augmentation(config, _type = 'val')
-
-    _, _, testset, _, _ = get_dataset_and_dataloader(config)
+    _, valset, _, _ = get_dataset_and_dataloader(config)
 
     if config.tta:
         config.tta = TTA(
@@ -43,7 +40,7 @@ def main(args, config):
         config.tta = None
 
     metric = mAPScores(
-        dataset=testset,
+        dataset=valset,
         min_conf = config.min_conf_val,
         min_iou = config.min_iou_val,
         tta=config.tta,

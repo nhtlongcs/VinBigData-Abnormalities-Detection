@@ -17,7 +17,7 @@ import albumentations as A
 import cv2
 
 class CocoDataset(Dataset):
-    def __init__(self, config, root_dir, ann_path, train=True, inference=False, transforms=None):
+    def __init__(self, config, root_dir, ann_path, train=True, transforms=None):
         self.config = config
         self.root_dir = root_dir
         self.ann_path = ann_path
@@ -28,8 +28,7 @@ class CocoDataset(Dataset):
         self.resize_transforms = get_resize_augmentation(config.image_size, config.keep_ratio, box_transforms=True)
 
         self.box_format = 'yxyx' # Output format of the __getitem__
-  
-        self.inference = inference
+
         self.train = train
 
         self.coco = COCO(ann_path)

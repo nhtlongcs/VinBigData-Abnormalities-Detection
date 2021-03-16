@@ -13,7 +13,7 @@ def train(args, config):
 
     device = torch.device("cuda" if torch.cuda.is_available() else 'cpu')
 
-    trainset, valset, testset, trainloader, valloader = get_dataset_and_dataloader(config)
+    trainset, valset, trainloader, valloader = get_dataset_and_dataloader(config)
   
     net = get_model(args, config)
 
@@ -32,7 +32,7 @@ def train(args, config):
         config.tta = None
 
     metric = mAPScores(
-        dataset=testset,
+        dataset=valset,
         min_conf = config.min_conf_val,
         min_iou = config.min_iou_val,
         tta=config.tta,

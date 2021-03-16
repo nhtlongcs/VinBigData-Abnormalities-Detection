@@ -114,8 +114,6 @@ def get_dataset_and_dataloader(config):
             
             img_scales = torch.tensor([1.0]*len(batch), dtype=torch.float)
             img_sizes = torch.tensor([imgs[0].shape[-2:]]*len(batch), dtype=torch.float)
-            if self.inference:
-                return {'imgs': imgs, 'img_ids': img_ids, 'img_sizes': img_sizes, 'img_scales': img_scales}
 
             return {
                 'imgs': imgs, 
@@ -135,8 +133,6 @@ def get_dataset_and_dataloader(config):
             
             img_scales = torch.tensor([1.0]*len(batch), dtype=torch.float)
             img_sizes = torch.tensor([imgs[0].shape[-2:]]*len(batch), dtype=torch.float)
-            if self.inference:
-                return {'imgs': imgs, 'img_ids': img_ids, 'img_sizes': img_sizes, 'img_scales': img_scales}
 
             return {
                 'imgs': imgs, 
@@ -163,18 +159,9 @@ def get_dataset_and_dataloader(config):
         ann_path = os.path.join('datasets', config.project_name, config.val_anns),
         train=False,
         transforms=val_transforms)
-    
-    testset = CocoDataset(
-        config = config,
-        root_dir=os.path.join('datasets', config.project_name, config.val_imgs), 
-        ann_path = os.path.join('datasets', config.project_name, config.val_anns),
-        inference = True,
-        train = False,
-        transforms=val_transforms)
 
     trainset.set_box_format(box_format)
     valset.set_box_format(box_format)
-    testset.set_box_format(box_format)
 
     trainloader = DataLoader(
         trainset, 
@@ -192,5 +179,5 @@ def get_dataset_and_dataloader(config):
         num_workers= config.num_workers, 
         pin_memory=True)
 
-    return  trainset, valset, testset, trainloader, valloader
+    return  trainset, valset, trainloader, valloader
 

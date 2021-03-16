@@ -20,7 +20,7 @@ BATCH_SIZE = 16
 class TestDataset(Dataset):
     def __init__(self, config, test_df, transforms=None):
         self.image_size = config.image_size
-        self.root_dir = os.path.join('datasets', config.project_name, config.train_imgs)
+        self.root_dir = os.path.join('datasets', config.project_name, config.test_imgs)
         self.test_df = test_df
         self.transforms = transforms
         self.resize_transforms = get_resize_augmentation(config.image_size, config.keep_ratio, box_transforms=False)
@@ -95,7 +95,7 @@ def main(args, config):
         if not os.path.exists(args.output_path):
             os.makedirs(args.output_path)
 
-    test_df = pd.read_csv('./datasets/train_info.csv')
+    test_df = pd.read_csv('./datasets/test_info.csv')
     test_transforms = A.Compose([
         A.Resize(
             height = config.image_size[1],
