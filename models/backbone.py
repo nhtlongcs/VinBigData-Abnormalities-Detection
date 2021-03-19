@@ -141,7 +141,13 @@ class FRCNNBackbone(BaseBackbone):
 
     def forward(self, batch, device):
         self.model.train()
+
+        # Tensor of images
         inputs = batch["imgs"]
+
+        # Unwrap tensor into list of images
+        inputs = [i for i in inputs]
+        
         targets = batch['targets']
 
         inputs = list(image.to(device) for image in inputs)

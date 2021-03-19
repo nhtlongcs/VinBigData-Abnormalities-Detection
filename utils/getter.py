@@ -126,7 +126,7 @@ def get_dataset_and_dataloader(config):
     elif config.model_name.startswith('fasterrcnn'):
         box_format = 'xyxy' # Output of __getitem__ method
         def collate_fn(self, batch):
-            imgs = [s['img'] for s in batch]
+            imgs = torch.stack([s['img'] for s in batch], dim=0)
             targets = [s['target'] for s in batch]
             img_ids = [s['img_id'] for s in batch]
             img_names = [s['img_name'] for s in batch]
