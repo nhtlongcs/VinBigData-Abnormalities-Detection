@@ -8,8 +8,9 @@ from torch import nn
 from .effdet import get_efficientdet_config, EfficientDet, DetBenchTrain
 from .effdet.efficientdet import HeadNet
 from .frcnn import create_fasterrcnn_fpn
+from .yolov4 import Yolo_loss, Yolov4
 
-def get_model(args, config):
+def get_model(args, config, device):
     NUM_CLASSES = len(config.obj_list)
 
     if config.pretrained_backbone is None:
@@ -37,6 +38,14 @@ def get_model(args, config):
             num_classes=NUM_CLASSES, 
             pretrained=True,
             image_size=config.image_size)
+    elif config.model_name.startswith('yolo'):
+        backbone_name = config.model_name
+        net = Yolov4Backbone(
+            batch_size=config.batch_size,
+            device=device,
+            num_classes=NUM_CLASSES, 
+            image_size=config.image_size, 
+            pretrained_backbone_path=config.pretrained_backbone)
 
     return net
 
@@ -189,6 +198,82 @@ class FRCNNBackbone(BaseBackbone):
 
         return out
 
+class Yolov4Backbone(BaseBackbone):
+    def __init__(
+        self, 
+        batch_size,
+        device,
+        num_classes=80, 
+        image_size=[512,512], 
+        pretrained_backbone_path=None, 
+        **kwargs):
+
+        super(Yolov4Backbone, self).__init__(**kwargs)
+        self.name = 'yolov4'
+        self.model = Yolov4(
+            yolov4conv137weight=pretrained_backbone_path,
+            n_classes=num_classes
+        )
+
+        self.model = nn.DataParallel(self.model)
+        self.model.module.switch_mode('train')
+
+        self.loss_fn = Yolo_loss(
+            device=device, 
+            batch_size=batch_size, 
+            n_classes=num_classes, 
+            image_size=image_size[0])
+
+        self.num_classes = num_classes
+
+    def forward(self, batch, device):
+        self.model.module.switch_mode('train')
+
+        inputs = batch["imgs"]
+        targets = batch['targets']
+
+        inputs = inputs.to(device)
+        targets = targets.to(device)
+
+        outputs = self.model(inputs)
+        loss, loss_xy, loss_wh, loss_obj, loss_cls, loss_l2 = self.loss_fn(outputs, targets)
+        ret_loss_dict = {
+            'T': loss,
+            'OBJ': loss_obj,
+            'CLS': loss_cls,
+            'L2': loss_l2 
+        }
+        return ret_loss_dict
+
+    def detect(self, batch, device):
+        self.model.module.switch_mode('inference')
+
+        inputs = batch["imgs"]
+        inputs = inputs.to(device)
+        outputs =  self.model(inputs)
+        out = []
+        for i, (outboxes, outconfs) in enumerate(zip(outputs[0], outputs[1])):
+            print(outboxes)
+            print(outconfs)
+            break
+            # boxes = outboxes.data.cpu().numpy()
+            # labels = output['labels'].data.cpu().numpy()
+            # scores = output['scores'].data.cpu().numpy()
+            # if len(boxes) > 0:
+            #     out.append({
+            #         'bboxes': boxes,
+            #         'classes': labels,
+            #         'scores': scores,
+            #     })
+            # else:
+            #     out.append({
+            #         'bboxes': np.array(()),
+            #         'classes': np.array(()),
+            #         'scores': np.array(()),
+            #     })
+
+        return out
+
 def freeze_bn(model):
     def set_bn_eval(m):
         classname = m.__class__.__name__
@@ -198,3 +283,8 @@ def freeze_bn(model):
             m.bias.requires_grad = False
             m.eval() 
     model.apply(set_bn_eval)
+
+
+
+
+    
