@@ -15,6 +15,8 @@ sns.set(font_scale=.6)
 
 
 DEBUG = True
+
+np.random.seed(36)
 COLORS = np.random.random(size=(14, 3))
 
 
@@ -492,6 +494,8 @@ class MyApp(QWidget):
             if self.useann and self.ann_df is not None:
                 self.format_plot()
                 aps = np.zeros(len(self.clsfilter))
+                nps = np.zeros(len(self.clsfilter))
+                ngs = np.zeros(len(self.clsfilter))
                 for cid, c in enumerate(self.clsfilter):
                     pic = pred[pred['class_id'] == c]
                     gic = gt[gt['class_id'] == c]
@@ -502,6 +506,8 @@ class MyApp(QWidget):
                     sorted_ious = ious[score_sort_indices]
 
                     n_p, n_g = ious.shape
+                    nps[cid] = n_p
+                    ngs[cid] = n_g
 
                     TP, FP = np.zeros(n_p), np.zeros(n_p)
                     lst_TP_g = []
@@ -534,12 +540,13 @@ class MyApp(QWidget):
                     plt_lbl = f'{cid}' if aps[cid] > 0 else None
                     self.sc.axes[0].plot(rec, pre,
                                          label=plt_lbl,
-                                         color=COLORS[c])
+                                         color=COLORS[c],
+                                         marker='.')
 
                 self.sc.axes[0].legend()
                 self.sc.axes[1].barh(self.clsfilter, aps, align='center')
-                for i, (j, v) in enumerate(zip(self.clsfilter, aps)):
-                    if v > 0:
+                for i, (j, v, n_p, n_g) in enumerate(zip(self.clsfilter, aps, nps, ngs)):
+                    if n_p > 0 or n_g > 0:
                         self.sc.axes[1].text(v + .01, j - .33, f'{v:.2f}')
                 self.sc.draw()
         else:
