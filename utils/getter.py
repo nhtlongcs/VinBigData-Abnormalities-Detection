@@ -141,6 +141,36 @@ def get_dataset_and_dataloader(config):
                 'img_names': img_names,
                 'img_sizes': img_sizes, 
                 'img_scales': img_scales}
+    elif config.model_name.startswith('yolo'):
+        box_format = 'xyxy' # Output of __getitem__ method
+        max_num_boxes = 60
+        def collate_fn(self, batch):
+            imgs = torch.stack([s['img'] for s in batch], dim=0)
+            targets = [s['target'] for s in batch]
+            img_ids = [s['img_id'] for s in batch]
+            img_names = [s['img_name'] for s in batch]
+            
+            img_scales = torch.tensor([1.0]*len(batch), dtype=torch.float)
+            img_sizes = torch.tensor([imgs[0].shape[-2:]]*len(batch), dtype=torch.float)
+
+
+            # Yolo format
+
+            bboxes = []
+            for item in targets:
+                out_bboxes = torch.cat([item['boxes'], item['labels'].unsqueeze(1)], dim=1)
+                box = torch.zeros([max_num_boxes, 5])
+                box[:min(out_bboxes.shape[0], max_num_boxes)] = out_bboxes[:min(out_bboxes.shape[0], max_num_boxes)]
+                bboxes.append(box)
+            anns = torch.stack([ann for ann in bboxes], dim=0)
+
+            return {
+                'imgs': imgs, 
+                'targets': anns, 
+                'img_ids': img_ids,
+                'img_names': img_names,
+                'img_sizes': img_sizes, 
+                'img_scales': img_scales}
 
     CocoDataset.collate_fn = collate_fn
     train_transforms = get_augmentation(config, _type = 'train')
@@ -169,12 +199,14 @@ def get_dataset_and_dataloader(config):
         shuffle = True, 
         collate_fn=trainset.collate_fn, 
         num_workers= config.num_workers, 
+        drop_last=True,
         pin_memory=True)
 
     valloader = DataLoader(
         valset, 
         batch_size=config.batch_size, 
         shuffle = False,
+        drop_last=True,
         collate_fn=valset.collate_fn, 
         num_workers= config.num_workers, 
         pin_memory=True)

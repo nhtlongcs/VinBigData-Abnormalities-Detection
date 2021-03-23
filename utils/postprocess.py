@@ -56,13 +56,14 @@ def postprocessing(
     Output: bounding boxes in xywh format
     """
     boxes, scores, labels = preds['bboxes'], preds['scores'], preds['classes']
+    current_img_size = current_img_size[0] if current_img_size is not None else None
     if len(boxes) != 0:
         if mode is not None:
             boxes, scores, labels = box_fusion(
                 [boxes],
                 [scores],
                 [labels],
-                image_size=current_img_size[0],
+                image_size=current_img_size,
                 mode=mode,
                 iou_threshold=min_iou)
 
