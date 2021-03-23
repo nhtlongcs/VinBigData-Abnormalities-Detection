@@ -44,7 +44,7 @@ def binary_filter(df, image_id, boxes, scores, labels, low_thr=0.05, high_thr=0.
     non_abnormal_prob = float(non_abnormal_prob_series.tolist()[0])
     if non_abnormal_prob >= high_thr:
         new_boxes = [[0,0,1,1]]
-        new_labels = [14]
+        new_labels = [15]
         new_scores = [1.0]
     elif non_abnormal_prob > low_thr:
         new_boxes = boxes.tolist()
@@ -52,7 +52,7 @@ def binary_filter(df, image_id, boxes, scores, labels, low_thr=0.05, high_thr=0.
         new_scores = scores.tolist()
 
         new_boxes.append([0,0,1,1])
-        new_labels.append(14)
+        new_labels.append(15)
         new_scores.append(non_abnormal_prob)
     else:
         new_boxes = boxes
