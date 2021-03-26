@@ -8,7 +8,7 @@ from torch import nn
 from .effdet import get_efficientdet_config, EfficientDet, DetBenchTrain
 from .effdet.efficientdet import HeadNet
 from .frcnn import create_fasterrcnn_fpn
-from .yolov4 import Yolo_loss, Yolov4
+# from .yolov4 import Yolo_loss, Yolov4
 
 def get_model(args, config, device):
     NUM_CLASSES = len(config.obj_list)
@@ -253,24 +253,33 @@ class Yolov4Backbone(BaseBackbone):
         outputs =  self.model(inputs)
         out = []
         for i, (outboxes, outconfs) in enumerate(zip(outputs[0], outputs[1])):
-            print(outboxes)
-            print(outconfs)
-            break
-            # boxes = outboxes.data.cpu().numpy()
-            # labels = output['labels'].data.cpu().numpy()
-            # scores = output['scores'].data.cpu().numpy()
-            # if len(boxes) > 0:
-            #     out.append({
-            #         'bboxes': boxes,
-            #         'classes': labels,
-            #         'scores': scores,
-            #     })
-            # else:
-            #     out.append({
-            #         'bboxes': np.array(()),
-            #         'classes': np.array(()),
-            #         'scores': np.array(()),
-            #     })
+            # print(outboxes)
+            # print(outconfs)
+
+            img_height, img_width = inputs.shape[-2:]
+            boxes = outboxes.squeeze(2).cpu().detach().numpy()
+            # boxes[...,2:] = boxes[...,2:] - boxes[...,:2] # Transform [x1, y1, x2, y2] to [x1, y1, w, h]
+            boxes[:,0] = boxes[:,0]*img_width
+            boxes[:,1] = boxes[:,1]*img_height
+            boxes[:,2] = boxes[:,2]*img_width
+            boxes[:,3] = boxes[:,3]*img_height
+
+            confs = outconfs.cpu().detach().numpy()
+            labels = np.argmax(confs, axis=1).flatten()
+            scores = np.max(confs, axis=1).flatten()
+
+            if len(boxes) > 0:
+                out.append({
+                    'bboxes': boxes,
+                    'classes': labels,
+                    'scores': scores,
+                })
+            else:
+                out.append({
+                    'bboxes': np.array(()),
+                    'classes': np.array(()),
+                    'scores': np.array(()),
+                })
 
         return out
 

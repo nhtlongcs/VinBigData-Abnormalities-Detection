@@ -43,6 +43,7 @@ def resize_postprocessing(boxes, current_img_size, ori_img_size):
     # new_boxes[:,[1, 3]] = (boxes[:,[1, 3]] * ori_img_size[1])/ current_img_size[1]
     return new_boxes
 
+
 def postprocessing(
         preds, 
         current_img_size=None,  # Need to be square
@@ -127,3 +128,6 @@ def box_fusion(
     return np.array(picked_boxes), np.array(picked_score), np.array(picked_classes)
 
 
+def filter_class(preds, filtered_class_idx):
+    boxes, scores, labels = preds['bboxes'], preds['scores'], preds['classes']
+    
