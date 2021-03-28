@@ -48,7 +48,7 @@ def binary_filter(df, image_id, boxes, scores, labels, low_thr=0.06, high_thr=0.
 class TestDataset(Dataset):
     def __init__(self, config, test_df, transforms=None):
         self.image_size = config.image_size
-        self.root_dir = os.path.join('datasets', config.project_name, config.train_imgs)
+        self.root_dir = os.path.join('datasets', config.project_name, config.test_imgs)
         self.test_df = test_df
         self.transforms = transforms
         self.resize_transforms = get_resize_augmentation(config.image_size, config.keep_ratio, box_transforms=False)
@@ -123,7 +123,7 @@ def main(args, config):
         if not os.path.exists(args.output_path):
             os.makedirs(args.output_path)
 
-    test_df = pd.read_csv('/home/pmkhoi/source/vinaichestxray/datasets/train_info.csv')
+    test_df = pd.read_csv('/home/pmkhoi/source/vinaichestxray/datasets/ken_test_info.csv')
     test_transforms = A.Compose([
         A.Resize(
             height = config.image_size[1],
@@ -145,7 +145,7 @@ def main(args, config):
     else:
         config.tta = None
 
-    net = get_model(args, config)
+    net = get_model(args, config, device)
 
     model = Detector(model = net, device = device)
     model.eval()
@@ -230,7 +230,7 @@ def main(args, config):
 
         if args.submission:
             submission_df = pd.DataFrame(results, columns=['image_id', 'class_id', 'score', 'x_min', 'y_min' , 'x_max', 'y_max'])
-            submission_df.to_csv('results/train_pred_f4.csv', index=False)
+            submission_df.to_csv('results/folds/test_pred_f4.csv', index=False)
 
 
 if __name__ == '__main__':

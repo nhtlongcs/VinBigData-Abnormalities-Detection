@@ -47,7 +47,7 @@ def main(args, config):
         max_images=config.max_images_val,
         mode=config.fusion_mode)
 
-    net = get_model(args, config)
+    net = get_model(args, config, device)
 
     model = Detector(model = net, device = device)
     model.eval()
