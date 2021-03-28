@@ -13,7 +13,7 @@ import math
 import torch.nn as nn
 import torch.utils.data as data
 from torch.utils.data import DataLoader
-from utils.utils import init_weights
+from utils.utils import change_box_order
 import torchvision.models as models
 from torch.optim import SGD, AdamW
 from torch.optim.lr_scheduler import StepLR, CosineAnnealingLR, LambdaLR, ReduceLROnPlateau,OneCycleLR, CosineAnnealingWarmRestarts
@@ -159,7 +159,9 @@ def get_dataset_and_dataloader(config):
                 cxcy_boxes = item['boxes'] / img_size #normalize
                 num_boxes = cxcy_boxes.shape[0]
                 labels_out = torch.zeros([num_boxes, 6])
-                out_anns = torch.cat([item['labels'].unsqueeze(1), cxcy_boxes], dim=1)
+                labels = item['labels'].unsqueeze(1) 
+                labels = labels - 1
+                out_anns = torch.cat([labels, cxcy_boxes], dim=1)
                 labels_out[:, 1:] = out_anns[:,:]
                 labels_out[:, 0] = idx
                 targets_out.append(labels_out)
