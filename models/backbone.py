@@ -8,7 +8,8 @@ from torch import nn
 from .effdet import get_efficientdet_config, EfficientDet, DetBenchTrain
 from .effdet.efficientdet import HeadNet
 from .frcnn import create_fasterrcnn_fpn
-# from .yolov4 import Yolo_loss, Yolov4
+
+from .yolov4 import YoloLoss, Yolov4, non_max_suppression, intersect_dicts
 
 def get_model(args, config, device):
     NUM_CLASSES = len(config.obj_list)
@@ -46,6 +47,10 @@ def get_model(args, config, device):
             num_classes=NUM_CLASSES, 
             image_size=config.image_size, 
             pretrained_backbone_path=config.pretrained_backbone)
+
+    if args.sync_bn:
+        net = nn.SyncBatchNorm.convert_sync_batchnorm(net).to(device)
+
 
     return net
 
@@ -211,24 +216,27 @@ class Yolov4Backbone(BaseBackbone):
         super(Yolov4Backbone, self).__init__(**kwargs)
         self.name = 'yolov4'
         self.model = Yolov4(
-            yolov4conv137weight=pretrained_backbone_path,
-            n_classes=num_classes
+            cfg='./models/yolov4/configs/yolov4-p5.yaml', ch=3, nc=num_classes
         )
 
-        self.model = nn.DataParallel(self.model)
-        self.model.module.switch_mode('train')
+        if pretrained_backbone_path is not None:
+            print(pretrained_backbone_path)
+            ckpt = torch.load(pretrained_backbone_path, map_location='cpu')  # load checkpoint
+            print(ckpt.keys())
+            dasd
+            
+            exclude = ['anchor']
+            state_dict = ckpt['model'].float().state_dict()  # to FP32
+            state_dict = intersect_dicts(state_dict, self.model.state_dict(), exclude=exclude)  # intersect
+            self.model.load_state_dict(state_dict, strict=False) 
 
-        self.loss_fn = Yolo_loss(
-            device=device, 
-            batch_size=batch_size, 
-            n_classes=num_classes, 
-            image_size=image_size[0])
+        self.model = nn.DataParallel(self.model)
+        self.loss_fn = YoloLoss(num_classes=num_classes)
 
         self.num_classes = num_classes
 
     def forward(self, batch, device):
-        self.model.module.switch_mode('train')
-
+        self.model.train()
         inputs = batch["imgs"]
         targets = batch['targets']
 
@@ -236,38 +244,36 @@ class Yolov4Backbone(BaseBackbone):
         targets = targets.to(device)
 
         outputs = self.model(inputs)
-        loss, loss_xy, loss_wh, loss_obj, loss_cls, loss_l2 = self.loss_fn(outputs, targets)
+        loss, loss_items = self.loss_fn(outputs, targets, self.model)
+
         ret_loss_dict = {
             'T': loss,
-            'OBJ': loss_obj,
-            'CLS': loss_cls,
-            'L2': loss_l2 
+            'IOU': loss_items[0],
+            'OBJ': loss_items[1],
+            'CLS': loss_items[2],
         }
         return ret_loss_dict
 
     def detect(self, batch, device):
-        self.model.module.switch_mode('inference')
 
+        """
+        Returns:
+            detections with shape: nx6 (x1, y1, x2, y2, conf, cls)
+        """
+
+        self.model.eval()
+    
         inputs = batch["imgs"]
         inputs = inputs.to(device)
-        outputs =  self.model(inputs)
+        outputs, _ = self.model(inputs)
+        outputs = non_max_suppression(outputs, conf_thres=0.0001, iou_thres=0.8)
+        
+
         out = []
-        for i, (outboxes, outconfs) in enumerate(zip(outputs[0], outputs[1])):
-            # print(outboxes)
-            # print(outconfs)
-
-            img_height, img_width = inputs.shape[-2:]
-            boxes = outboxes.squeeze(2).cpu().detach().numpy()
-            # boxes[...,2:] = boxes[...,2:] - boxes[...,:2] # Transform [x1, y1, x2, y2] to [x1, y1, w, h]
-            boxes[:,0] = boxes[:,0]*img_width
-            boxes[:,1] = boxes[:,1]*img_height
-            boxes[:,2] = boxes[:,2]*img_width
-            boxes[:,3] = boxes[:,3]*img_height
-
-            confs = outconfs.cpu().detach().numpy()
-            labels = np.argmax(confs, axis=1).flatten()
-            scores = np.max(confs, axis=1).flatten()
-
+        for i, output in enumerate(outputs):
+            boxes = output[:4]
+            labels = output[-1]
+            scores = output[-2]
             if len(boxes) > 0:
                 out.append({
                     'bboxes': boxes,
