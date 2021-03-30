@@ -30,7 +30,7 @@ def get_model(args, config, device):
             load_weights=load_weights, 
             freeze_backbone = getattr(args, 'freeze_backbone', False),
             pretrained_backbone_path=config.pretrained_backbone,
-            freeze_batchnorm=args.freeze_bn,
+            freeze_batchnorm = getattr(args, 'freeze_bn', False),
             image_size=config.image_size)
     elif config.model_name.startswith('fasterrcnn'):
         backbone_name = config.model_name.split('-')[1]
@@ -48,8 +48,8 @@ def get_model(args, config, device):
             image_size=config.image_size, 
             pretrained_backbone_path=config.pretrained_backbone)
 
-    if args.sync_bn:
-        net = nn.SyncBatchNorm.convert_sync_batchnorm(net).to(device)
+    # if args.sync_bn:
+    #     net = nn.SyncBatchNorm.convert_sync_batchnorm(net).to(device)
 
 
     return net
