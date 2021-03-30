@@ -231,14 +231,17 @@ class Yolov4Backbone(BaseBackbone):
         self.num_classes = num_classes
 
     def forward(self, batch, device):
-        self.model.train()
         inputs = batch["imgs"]
         targets = batch['yolo_targets']
 
         inputs = inputs.to(device)
         targets = targets.to(device)
+        
+        if self.model.training:
+            outputs = self.model(inputs)
+        else:
+            _ , outputs = self.model(inputs)
 
-        outputs = self.model(inputs)
         loss, loss_items = self.loss_fn(outputs, targets)
 
         ret_loss_dict = {
@@ -250,9 +253,6 @@ class Yolov4Backbone(BaseBackbone):
         return ret_loss_dict
 
     def detect(self, batch, device):
-
-        self.model.eval()
-    
         inputs = batch["imgs"]
         inputs = inputs.to(device)
         outputs, _ = self.model(inputs)
