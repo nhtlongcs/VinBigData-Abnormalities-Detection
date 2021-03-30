@@ -156,7 +156,7 @@ def get_dataset_and_dataloader(config):
             for idx, item in enumerate(targets):
                 # Convert to center xywh
                 cxcy_boxes = change_box_order(item['boxes'], order='xyxy2cxcy')
-                cxcy_boxes = item['boxes'] / img_size #normalize
+                cxcy_boxes = cxcy_boxes / img_size #normalize
                 num_boxes = cxcy_boxes.shape[0]
                 labels_out = torch.zeros([num_boxes, 6])
                 labels = item['labels'].unsqueeze(1) 
@@ -169,7 +169,8 @@ def get_dataset_and_dataloader(config):
 
             return {
                 'imgs': imgs, 
-                'targets': targets_out,
+                'targets': targets,
+                'yolo_targets': targets_out,
                 'img_ids': img_ids,
                 'img_names': img_names,
                 'img_scales': img_scales,
@@ -196,6 +197,7 @@ def get_dataset_and_dataloader(config):
 
     trainset.set_box_format(box_format)
     valset.set_box_format(box_format)
+    config.box_format = box_format
 
     trainloader = DataLoader(
         trainset, 
