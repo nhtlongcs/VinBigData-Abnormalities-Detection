@@ -160,7 +160,7 @@ def get_dataset_and_dataloader(config):
                 num_boxes = cxcy_boxes.shape[0]
                 labels_out = torch.zeros([num_boxes, 6])
                 labels = item['labels'].unsqueeze(1) 
-                labels = labels - 1
+                # labels = labels - 1
                 out_anns = torch.cat([labels, cxcy_boxes], dim=1)
                 labels_out[:, 1:] = out_anns[:,:]
                 labels_out[:, 0] = idx
