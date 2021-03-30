@@ -9,7 +9,7 @@ from .effdet import get_efficientdet_config, EfficientDet, DetBenchTrain
 from .effdet.efficientdet import HeadNet
 from .frcnn import create_fasterrcnn_fpn
 
-from .yolov4 import YoloLoss, Yolov4, non_max_suppression, intersect_dicts
+from .yolov4 import YoloLoss, Yolov4, non_max_suppression
 
 def get_model(args, config, device):
     NUM_CLASSES = len(config.obj_list)
@@ -220,31 +220,26 @@ class Yolov4Backbone(BaseBackbone):
         )
 
         if pretrained_backbone_path is not None:
-            print(pretrained_backbone_path)
             ckpt = torch.load(pretrained_backbone_path, map_location='cpu')  # load checkpoint
-            print(ckpt.keys())
-            dasd
-            
-            exclude = ['anchor']
-            state_dict = ckpt['model'].float().state_dict()  # to FP32
-            state_dict = intersect_dicts(state_dict, self.model.state_dict(), exclude=exclude)  # intersect
-            self.model.load_state_dict(state_dict, strict=False) 
+            self.model.load_state_dict(ckpt, strict=False) 
 
-        self.model = nn.DataParallel(self.model)
-        self.loss_fn = YoloLoss(num_classes=num_classes)
+        self.model = nn.DataParallel(self.model).cuda()
+        self.loss_fn = YoloLoss(
+            num_classes=num_classes,
+            model=self.model)
 
         self.num_classes = num_classes
 
     def forward(self, batch, device):
         self.model.train()
         inputs = batch["imgs"]
-        targets = batch['targets']
+        targets = batch['yolo_targets']
 
         inputs = inputs.to(device)
         targets = targets.to(device)
 
         outputs = self.model(inputs)
-        loss, loss_items = self.loss_fn(outputs, targets, self.model)
+        loss, loss_items = self.loss_fn(outputs, targets)
 
         ret_loss_dict = {
             'T': loss,
@@ -256,24 +251,28 @@ class Yolov4Backbone(BaseBackbone):
 
     def detect(self, batch, device):
 
-        """
-        Returns:
-            detections with shape: nx6 (x1, y1, x2, y2, conf, cls)
-        """
-
         self.model.eval()
     
         inputs = batch["imgs"]
         inputs = inputs.to(device)
         outputs, _ = self.model(inputs)
-        outputs = non_max_suppression(outputs, conf_thres=0.0001, iou_thres=0.8)
-        
-
+        outputs = non_max_suppression(outputs, conf_thres=0.0001, iou_thres=0.8) #[bs, max_det, 6]
+    
         out = []
         for i, output in enumerate(outputs):
-            boxes = output[:4]
-            labels = output[-1]
-            scores = output[-2]
+            # [x1,y1,x2,y2, score, label]
+            if output is not None and len(output) != 0:
+                output = output.detach().cpu().numpy()
+                boxes = output[:, :4]
+                boxes[:,[0,2]] = boxes[:,[0,2]] 
+                boxes[:,[1,3]] = boxes[:,[1,3]] 
+                labels = output[:, -1]
+                scores = output[:, -2]
+          
+            else:
+                boxes = []
+                labels = []
+                scores = []
             if len(boxes) > 0:
                 out.append({
                     'bboxes': boxes,
